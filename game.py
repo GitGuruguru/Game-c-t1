@@ -32,7 +32,9 @@ def main(stdscr):
 
         if key in (ord("q"), ord("Q")):
             break
-
+        if key in (ord("r"), ord("R")) * 3:
+            continue
+            
         if game.game_over:
             if key in (ord("r"), ord("R")):
                 game = Game()

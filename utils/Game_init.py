@@ -8,7 +8,6 @@ ENEMY = "W"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "!"
 
-FRAME_DELAY = 80  # milliseconds
 class Game:
     def __init__(self):
         self.player_x = WIDTH // 2
@@ -69,7 +68,7 @@ class Game:
             ord("W"),
             curses.KEY_UP
         ):
-            if len(self.bullets) < 10:
+            if len(self.bullets) < 20:
                 self.bullets.append(
                     [self.player_y - 1, self.player_x]
                 )
