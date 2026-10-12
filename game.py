@@ -7,9 +7,9 @@ WIDTH = 100
 HEIGHT = 24
 
 PLAYER = "<A>"
-ENEMY = "W"
+ENEMY = r"\W/"
 PLAYER_BULLET = "|"
-ENEMY_BULLET = "!"
+ENEMY_BULLET = "*"
 
 FRAME_DELAY = 80  
 
@@ -21,13 +21,14 @@ class Game:
 
         self.bullets = []
         self.enemy_bullets = []
+        self.player_bullets = []
         self.enemies = []
 
         self.score = 0
-        self.lives = 3
+        self.lives = 2
         self.level = 1
 
-        self.enemy_dir = 1
+        self.enemy_dir = 2
         self.frame = 0
 
         self.game_over = False
@@ -77,7 +78,9 @@ class Game:
             if len(self.bullets) < 10:
                 self.bullets.append(
                     [self.player_y - 1, self.player_x]
+                    
                 )
+                self.player_bullets.append([self.player_y - 1, self.player_x])
 
         # Move enemies
         speed = max(2, 8 - self.level)
@@ -107,22 +110,28 @@ class Game:
             enemy = random.choice(alive)
             self.enemy_bullets.append([enemy[1] + 1, enemy[0]])
 
-        # Move player bullets and check collisions
+        
         new_bullets = []
 
-        for bullet in self.bullets:
-            bullet[0] -= 1
-            hit = False
+      
 
-            for enemy in self.alive_enemies():
-                if bullet[0] == enemy[1] and bullet[1] == enemy[0]:
-                    enemy[2] = False
-                    self.score += 10
-                    hit = True
-                    break
+        for enemy in self.alive_enemies():
+                for bullet in self.player_bullets:
+                    bullet[0] += 1
+                    if (bullet[0] >= enemy[1] and abs(bullet[1] - enemy[0]) <= 1 ):
+                        enemy[2] = False
+                        self.score += 10
+                        hit = True
+                        if not hit and bullet[0] > 1:
+                            new_bullets.append(bullet)
+                        continue
+                
+                    # Remove the bullet after contact.
+                            
+                
+             
 
-            if not hit and bullet[0] > 1:
-                new_bullets.append(bullet)
+                    
 
         self.bullets = new_bullets
 
@@ -136,7 +145,7 @@ class Game:
                 bullet[0] >= self.player_y
                 and abs(bullet[1] - self.player_x) <= 1
             ):
-                # Each hit changes the player's color to red.
+              
                 if now >= self.invulnerable_until:
                     self.lives -= 1
                     self.hit_until = now + 0.7
@@ -183,7 +192,7 @@ class Game:
 
        
         hud = (
-            f" Score:{self.score} "
+            f"Score:{self.score} "
             f"Lives:{self.lives} "
             f"Level:{self.level} "
         )
@@ -210,7 +219,7 @@ class Game:
 
         for x, y, alive in self.enemies:
             if alive and 1 <= y < HEIGHT - 1:
-                screen.addch(y, x, ENEMY, enemy_color)
+                screen.addstr(y, x, ENEMY, enemy_color)
 
         # Player bullets
         bullet_color = curses.color_pair(4) | curses.A_BOLD
@@ -218,7 +227,7 @@ class Game:
         for y, x in self.bullets:
             if 1 <= y < HEIGHT - 1 :
                 screen.addch(y, x, PLAYER_BULLET, bullet_color)
-                screen.timeout(FRAME_DELAY)
+               
                 
                 
 
