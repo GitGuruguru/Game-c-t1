@@ -1,13 +1,12 @@
 import curses , random , time
 
-WIDTH = 50
-HEIGHT = 24
+WIDTH = 180
+HEIGHT = 30
 
 PLAYER = "<A>"
-ENEMY = "W"
+ENEMY = "M"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "!"
-
 class Game:
     def __init__(self):
         self.player_x = WIDTH // 2
@@ -16,17 +15,17 @@ class Game:
         self.bullets = []
         self.enemy_bullets = []
         self.enemies = []
-
+        
         self.score = 0
         self.lives = 3
         self.level = 1
-
+        self.money = 0
         self.enemy_dir = 1
         self.frame = 0
 
         self.game_over = False
 
-        # Player color and damage protection
+        # Iframes
         self.hit_until = 0
         self.invulnerable_until = 0
 
@@ -68,13 +67,13 @@ class Game:
             ord("W"),
             curses.KEY_UP
         ):
-            if len(self.bullets) < 20:
+            if len(self.bullets) < 10:
                 self.bullets.append(
                     [self.player_y - 1, self.player_x]
                 )
 
         # Move enemies
-        speed = max(2, 8 - self.level)
+        speed = max(2, 6 - self.level)
 
         if self.frame % speed == 0:
             alive = self.alive_enemies()
@@ -162,28 +161,28 @@ class Game:
     def draw(self, screen):
         screen.erase()
 
-        # Terminal dimensions
+        # gg er 
         rows, cols = screen.getmaxyx()
 
         if rows < HEIGHT or cols < WIDTH:
             screen.addstr(
                 0, 0,
-                f"Terminal too small! Need {WIDTH}x{HEIGHT}."
+                f"Terminal jest za maly! Potrzebny {WIDTH}x{HEIGHT}."
             )
             screen.refresh()
             return
 
         screen.border()
 
-        # Scoreboard
+       
         hud = (
-            f" Score:{self.score} "
-            f"Lives:{self.lives} "
-            f"Level:{self.level} "
+            f"Score:{self.score} "
+            f"Zycia:{self.lives} "
+            f"Poziom:{self.level} "
         )
         screen.addstr(0, 2, hud[:WIDTH - 4], curses.A_BOLD)
 
-        # Select player color
+        
         now = time.monotonic()
 
         if now < self.hit_until:
@@ -191,7 +190,7 @@ class Game:
         else:
             player_color = curses.color_pair(1) | curses.A_BOLD
 
-        # Player
+        
         screen.addstr(
             self.player_y,
             self.player_x - 1,
@@ -199,7 +198,7 @@ class Game:
             player_color
         )
 
-        # Invaders
+    
         enemy_color = curses.color_pair(3) | curses.A_BOLD
 
         for x, y, alive in self.enemies:
@@ -210,8 +209,10 @@ class Game:
         bullet_color = curses.color_pair(4) | curses.A_BOLD
 
         for y, x in self.bullets:
-            if 1 <= y < HEIGHT - 1:
+            if 1 <= y < HEIGHT - 1 :
                 screen.addch(y, x, PLAYER_BULLET, bullet_color)
+                
+                
 
         # Enemy bullets
         enemy_bullet_color = curses.color_pair(2) | curses.A_BOLD
