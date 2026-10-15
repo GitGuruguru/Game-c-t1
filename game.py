@@ -14,7 +14,7 @@ def main(stdscr):
     # Enable terminal colors
     if curses.has_colors():
         curses.start_color()
-
+        
         try:
             curses.use_default_colors()
         except curses.error:

@@ -1,7 +1,14 @@
 import curses , random , time
+from Game_shop import *
+from ..data import Saves
+
 
 WIDTH = 180
 HEIGHT = 30
+try:
+    player = Saves.load_player()
+except ReferenceError as er:
+    print(er)
 
 PLAYER = "<A>"
 ENEMY = "M"
@@ -11,11 +18,10 @@ class Game:
     def __init__(self):
         self.player_x = WIDTH // 2
         self.player_y = HEIGHT - 2
-
+        
         self.bullets = []
         self.enemy_bullets = []
         self.enemies = []
-        
         self.score = 0
         self.lives = 3
         self.level = 1
@@ -157,7 +163,22 @@ class Game:
             self.spawn_enemies()
             self.bullets.clear()
             self.enemy_bullets.clear()
+    def spawn_shop(self):
+        shop = Game_ShopEvent()
 
+
+        player = {
+            "name":PLAYER,
+            "level": self.level,
+            "money":self.money,
+            "score":self.score,
+            "lives":self.lives,
+            "items":{},
+            "power":{}
+        }
+        Saves.save_player(player,"data/player.json")
+        
+        
     def draw(self, screen):
         screen.erase()
 

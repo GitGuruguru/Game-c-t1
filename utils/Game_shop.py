@@ -29,13 +29,13 @@ SPECIAL_POWER = {
 }
 
 class Game_ShopEvent():
-    def __init__(self,money,  windows,  ):
-        self.windows = windows
-        self.money = money
-        self.score = 2
-        self.level = 2
-        self.items = []
-        self.powers = []
+    def __init__(self,player,  ):
+   
+        self.money = player.money
+        self.score =player.score
+        self.level = player.level 
+        self.items = player.items
+        self.powers = player.powers
         self.lives = 2
         self.is_cheat_enabled = False
         self.battle_pass = True
@@ -139,7 +139,7 @@ class Game_ShopEvent():
         )
         screen.addstr(
             (HEIGHT - 4),
-            (WIDTH - len("Randomiser")) // 3 + 110,
+            (WIDTH - len("Reset")) // 3 + 110,
             "Randomiser",
             curses.color_pair(2) | curses.A_BOLD
         )
@@ -147,5 +147,11 @@ class Game_ShopEvent():
             (HEIGHT - 4),
             (WIDTH - len("Inventory")) // 3 + 90,
             "Inventory",
+            curses.color_pair(2) | curses.A_BOLD
+        )
+        screen.addstr(
+            HEIGHT-4,
+            (WIDTH - len("Save")) // 3 + 70,
+            "Save",
             curses.color_pair(2) | curses.A_BOLD
         )
