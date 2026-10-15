@@ -1,19 +1,19 @@
 import curses , random , time
-from Game_shop import *
-from ..data import Saves
+# from Game_shop import Game_ShopEvent
+# from data.Saves import *
 
 
 WIDTH = 180
 HEIGHT = 30
-try:
-    player = Saves.load_player()
-except ReferenceError as er:
-    print(er)
+# try:
+#     player = load_player()
+# except ReferenceError as er:
+#     print(er)
 
 PLAYER = "<A>"
 ENEMY = "M"
 PLAYER_BULLET = "|"
-ENEMY_BULLET = "!"
+ENEMY_BULLET = "`"
 class Game:
     def __init__(self):
         self.player_x = WIDTH // 2
@@ -77,6 +77,22 @@ class Game:
                 self.bullets.append(
                     [self.player_y - 1, self.player_x]
                 )
+        if key in (curses.KEY_LEFT,ord("A")) or key in (curses.KEY_RIGHT,ord("D")) and key in(
+                ord(" "),
+                ord("w"),
+                ord("W"),
+                curses.KEY_UP
+            ): 
+                if key in (curses.KEY_LEFT, ord("a"), ord("A")):
+                            self.player_x = max(3, self.player_x - 1)
+                elif key in (curses.KEY_RIGHT, ord("d"), ord("D")):
+                            self.player_x = min(WIDTH - 4, self.player_x + 1)
+                if len(self.bullets) < 10:
+                    self.bullets.append(
+                        [self.player_y - 1, self.player_x])
+
+            
+
 
         # Move enemies
         speed = max(2, 6 - self.level)
@@ -102,7 +118,7 @@ class Game:
         # Enemy shooting
         alive = self.alive_enemies()
 
-        if alive and self.frame % max(4, 20 - self.level) == 0:
+        if alive and self.frame % max(1, 1 - self.level) == 0:
             enemy = random.choice(alive)
             self.enemy_bullets.append([enemy[1] + 1, enemy[0]])
 
@@ -164,9 +180,9 @@ class Game:
             self.bullets.clear()
             self.enemy_bullets.clear()
     def spawn_shop(self):
-        shop = Game_ShopEvent()
+        # shop = Game_ShopEvent()
 
-
+        
         player = {
             "name":PLAYER,
             "level": self.level,
@@ -176,7 +192,7 @@ class Game:
             "items":{},
             "power":{}
         }
-        Saves.save_player(player,"data/player.json")
+        # save_player(player,"data/player.json")
         
         
     def draw(self, screen):
@@ -203,7 +219,7 @@ class Game:
         )
         screen.addstr(0, 2, hud[:WIDTH - 4], curses.A_BOLD)
 
-        
+                
         now = time.monotonic()
 
         if now < self.hit_until:
@@ -228,7 +244,7 @@ class Game:
 
         # Player bullets
         bullet_color = curses.color_pair(4) | curses.A_BOLD
-
+        
         for y, x in self.bullets:
             if 1 <= y < HEIGHT - 1 :
                 screen.addch(y, x, PLAYER_BULLET, bullet_color)
@@ -242,6 +258,7 @@ class Game:
             if 1 <= y < HEIGHT - 1:
                 screen.addch(y, x, ENEMY_BULLET, enemy_bullet_color)
 
+        
         # Game over screen
         if self.game_over:
             message = "GAME OVER!"

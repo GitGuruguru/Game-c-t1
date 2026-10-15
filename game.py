@@ -1,9 +1,8 @@
-
 import curses
 import random
 import time
 from utils.Game_init import Game
-from utils.Game_shop import Game_ShopEvent
+# from utils.Game_shop import Game_ShopEvent
 
 FRAME_DELAY = 50
 
@@ -26,20 +25,21 @@ def main(stdscr):
         curses.init_pair(4, curses.COLOR_YELLOW, -1)
 
     game = Game()
-    shoplevel = Game_ShopEvent(0,1)
+    # shoplevel = Game_ShopEvent(0,1)
     while True:
         key = stdscr.getch()
-        # if game.level  == 1:
-        shoplevel.draw_fill_window_shop(stdscr)
-        # if game.game_over:
-        #     if key in (ord("r"), ord("R")):
-        #         game = Game()
-        # else:
-        #     game.update(key)
-        # try:
-        #     game.draw(stdscr)
-        # except curses.error:
-        #     pass
+        if game.level  == 1:
+        #    shoplevel.draw_fill_window_shop(stdscr)
+           pass
+        if game.game_over:
+            if key in (ord("r"), ord("R")):
+                game = Game()
+        else:
+            game.update(key)
+        try:
+            game.draw(stdscr)
+        except curses.error:
+            pass
 
 
 if __name__ == "__main__":

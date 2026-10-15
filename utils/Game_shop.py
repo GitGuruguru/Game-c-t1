@@ -1,5 +1,5 @@
 import curses , random , time 
-
+from Game_init import *
 
 WIDTH = 59
 HEIGHT = 24
@@ -37,27 +37,34 @@ class Game_ShopEvent():
         self.items = player.items
         self.powers = player.powers
         self.lives = 2
-        self.is_cheat_enabled = False
-        self.battle_pass = True
-        self.MICROTRANSACTIONS = "enabled"
+        # self.is_cheat_enabled = False
+        # self.battle_pass = True
+        # self.MICROTRANSACTIONS = "enabled"
 
+    def get_cheat_code_classic(stdscr):
+        
+        key = stdscr.getch()
+        konami_code.append(key)
+        if konami_code == ["W","A","S","D","R"]:
+            return True
+        return False
     def get_cheat_code_konami(stdscr):
-
+                        
         key = stdscr.getch()
         konami_code.append(key)
         if konami_code == [curses.KEY_UP ,curses.KEY_UP,curses.KEY_DOWN,curses.KEY_DOWN,curses.KEY_RIGHT,curses.KEY_LEFT,curses.KEY_RIGHT,curses.KEY_LEFT,"B","A"]:
             return True
         return False
-    
+        
     def draw_fill_window_shop(self,screen):
 
-        if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
-            pass
-        elif(self.MICROTRANSACTIONS != "enabled" or self.battle_pass != True):
-            print("Wlacz Microtransacje albo/i  batlepass")
-            self.fill_window()
-        if(self.is_cheat_enabled == True):
-            return
+        # if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
+        #     pass
+        # elif(self.MICROTRANSACTIONS != "enabled" or self.battle_pass != True):
+        #     print("Wlacz Microtransacje albo/i  batlepass")
+        #     self.fill_window()
+        # if(self.is_cheat_enabled == True):
+        #     return
         
         screen.erase()
 
@@ -87,7 +94,7 @@ class Game_ShopEvent():
         
         screen.addstr(
             HEIGHT // 6 , 
-           (WIDTH - len("Sklep")) // 5 -1,
+           (WIDTH - len("Sklep")) // 5 - 1,
             "Sklep",
             curses.color_pair(2) | curses.A_BOLD
         )
@@ -112,6 +119,7 @@ class Game_ShopEvent():
            "Przejdz do nastepnej rondy",
            curses.color_pair(2) | curses.A_BOLD
         )
+        
         for i in range(4):
             screen.addstr(
                 HEIGHT // 2,
@@ -155,3 +163,4 @@ class Game_ShopEvent():
             "Save",
             curses.color_pair(2) | curses.A_BOLD
         )
+        
