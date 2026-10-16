@@ -1,17 +1,17 @@
 import curses , random , time
-# from Game_shop import Game_ShopEvent
-# from data.Saves import *
+from utils.Game_shop import Game_ShopEvent
+from data.Saves  import *
 
 
 WIDTH = 180
 HEIGHT = 30
-# try:
-#     player = load_player()
-# except ReferenceError as er:
-#     print(er)
+try:
+    player = load_player()
+except ReferenceError as er:
+    print(er)
 
 PLAYER = "<A>"
-ENEMY = "M"
+ENEMY = r"\M/"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
 class Game:
@@ -110,7 +110,7 @@ class Game:
                 self.enemy_dir *= -1
 
                 for enemy in alive:
-                    enemy[1] += 1
+                    enemy[1] += 3
             else:
                 for enemy in alive:
                     enemy[0] += self.enemy_dir
@@ -179,6 +179,8 @@ class Game:
             self.spawn_enemies()
             self.bullets.clear()
             self.enemy_bullets.clear()
+            if self.level % 3 == 0 :
+                Game_ShopEvent(player)
     def spawn_shop(self):
         # shop = Game_ShopEvent()
 
@@ -240,7 +242,7 @@ class Game:
 
         for x, y, alive in self.enemies:
             if alive and 1 <= y < HEIGHT - 1:
-                screen.addch(y, x, ENEMY, enemy_color)
+                screen.addstr(y, x, ENEMY, enemy_color)
 
         # Player bullets
         bullet_color = curses.color_pair(4) | curses.A_BOLD

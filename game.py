@@ -1,8 +1,10 @@
 import curses
 import random
 import time
+
 from utils.Game_init import Game
-# from utils.Game_shop import Game_ShopEvent
+from utils.Game_shop import Game_ShopEvent
+from data.Saves import *
 
 FRAME_DELAY = 50
 
@@ -23,13 +25,13 @@ def main(stdscr):
         curses.init_pair(2, curses.COLOR_RED, -1)
         curses.init_pair(3, curses.COLOR_GREEN, -1)
         curses.init_pair(4, curses.COLOR_YELLOW, -1)
-
+    player = load_player("./data/player.json")
     game = Game()
-    # shoplevel = Game_ShopEvent(0,1)
+    shoplevel = Game_ShopEvent(player)
     while True:
         key = stdscr.getch()
         if game.level  == 1:
-        #    shoplevel.draw_fill_window_shop(stdscr)
+           shoplevel.draw_fill_window_shop(stdscr)
            pass
         if game.game_over:
             if key in (ord("r"), ord("R")):

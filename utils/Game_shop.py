@@ -1,5 +1,5 @@
 import curses , random , time 
-from Game_init import *
+from utils.Game_init import *
 
 WIDTH = 59
 HEIGHT = 24
@@ -29,17 +29,17 @@ SPECIAL_POWER = {
 }
 
 class Game_ShopEvent():
-    def __init__(self,player,  ):
-   
+    def __init__(self,player):
+        self.player_name = player.name
         self.money = player.money
         self.score =player.score
         self.level = player.level 
         self.items = player.items
         self.powers = player.powers
         self.lives = 2
-        # self.is_cheat_enabled = False
-        # self.battle_pass = True
-        # self.MICROTRANSACTIONS = "enabled"
+        self.is_cheat_enabled = False
+        self.battle_pass = True
+        self.MICROTRANSACTIONS = "enabled"
 
     def get_cheat_code_classic(stdscr):
         
@@ -58,13 +58,13 @@ class Game_ShopEvent():
         
     def draw_fill_window_shop(self,screen):
 
-        # if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
-        #     pass
-        # elif(self.MICROTRANSACTIONS != "enabled" or self.battle_pass != True):
-        #     print("Wlacz Microtransacje albo/i  batlepass")
-        #     self.fill_window()
-        # if(self.is_cheat_enabled == True):
-        #     return
+        if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
+            pass
+        elif(self.MICROTRANSACTIONS != "enabled" or self.battle_pass != True):
+            print("Wlacz Microtransacje albo/i  batlepass")
+            self.fill_window()
+        if(self.is_cheat_enabled == True):
+            return
         
         screen.erase()
 
@@ -88,7 +88,6 @@ class Game_ShopEvent():
             f" Pieniandze:{self.money} "
         )
         screen.addstr(0, 2, hud[:WIDTH - 4], curses.A_BOLD)                                                                                                                                                                                                                                                                                                                                                                                                                               
-        now = time.monotonic()
         random_item = "random.choice(DEF_ITEMS)"
         random_power =" random.choice(DEF_POWERS)"
         
@@ -163,4 +162,9 @@ class Game_ShopEvent():
             "Save",
             curses.color_pair(2) | curses.A_BOLD
         )
-        
+        screen.addstr(
+            HEIGHT - 5 ,
+            (WIDTH - len(self.player_name)) // 3 + 50,
+            self.player_name,
+            curses.color_pair(2) | curses.A_BLINK
+        )
