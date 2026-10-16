@@ -1,5 +1,5 @@
 import curses , random , time 
-from utils.Game_init import *
+from Game_init import *
 
 WIDTH = 59
 HEIGHT = 24
@@ -30,13 +30,13 @@ SPECIAL_POWER = {
 
 class Game_ShopEvent():
     def __init__(self,player):
-        self.player_name = player.name
-        self.money = player.money
-        self.score =player.score
-        self.level = player.level 
-        self.items = player.items
-        self.powers = player.powers
-        self.lives = 2
+        self.player_name = player["name"]
+        self.money = player["money"]
+        self.score =player["score"]
+        self.level = player["level"] 
+        self.items = player["items"]
+        self.powers = player["power"]
+        self.lives = player["lives"]
         self.is_cheat_enabled = False
         self.battle_pass = True
         self.MICROTRANSACTIONS = "enabled"

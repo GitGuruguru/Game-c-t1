@@ -20,5 +20,28 @@ class boss_tier_enemy(s_tier_enemy):
         self.extraxp = xp_gain // 2
 
 
+class cluster_capitan(boss_tier_enemy):
+    def __init__(self, hp, xp_gain, dmg, speed, ability, phases , height , width ):
+        super().__init__(hp, xp_gain, dmg, speed, ability, phases)
 
-        
+    def misle_barrage():
+        pass
+    def icbm():
+        pass
+    def active_rapair():
+        pass
+
+
+
+
+class ghost_leviathan(boss_tier_enemy):
+    def __init__(self, hp, xp_gain, dmg, speed, ability, phases,height,width):
+        super().__init__(hp, xp_gain, dmg, speed, ability, phases)
+    
+    def slide():
+        pass
+    def fade():
+        pass
+    def destroy():
+        pass
+

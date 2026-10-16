@@ -2,8 +2,8 @@ import curses
 import random
 import time
 
-from utils.Game_init import Game
-from utils.Game_shop import Game_ShopEvent
+from Game_init import Game
+from Shop import Game_ShopEvent
 from data.Saves import *
 
 FRAME_DELAY = 50
@@ -36,6 +36,8 @@ def main(stdscr):
         if game.game_over:
             if key in (ord("r"), ord("R")):
                 game = Game()
+            if key in (ord("q"), ord("Q")):
+                break
         else:
             game.update(key)
         try:

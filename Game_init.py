@@ -1,17 +1,17 @@
 import curses , random , time
-from utils.Game_shop import Game_ShopEvent
+from Shop import Game_ShopEvent
 from data.Saves  import *
 
 
 WIDTH = 180
-HEIGHT = 30
+HEIGHT = 45
 try:
-    player = load_player()
+    player = load_player("./data/player.json")
 except ReferenceError as er:
     print(er)
 
 PLAYER = "<A>"
-ENEMY = r"\M/"
+ENEMY = r"M"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
 class Game:
@@ -22,10 +22,10 @@ class Game:
         self.bullets = []
         self.enemy_bullets = []
         self.enemies = []
-        self.score = 0
-        self.lives = 3
-        self.level = 1
-        self.money = 0
+        self.score = player["score"]
+        self.lives = player["lives"]
+        self.level = player["level"]
+        self.money = player["money"]
         self.enemy_dir = 1
         self.frame = 0
 
@@ -118,7 +118,7 @@ class Game:
         # Enemy shooting
         alive = self.alive_enemies()
 
-        if alive and self.frame % max(1, 1 - self.level) == 0:
+        if alive and self.frame % max(2, 10 - self.level) == 0:
             enemy = random.choice(alive)
             self.enemy_bullets.append([enemy[1] + 1, enemy[0]])
 
@@ -181,21 +181,7 @@ class Game:
             self.enemy_bullets.clear()
             if self.level % 3 == 0 :
                 Game_ShopEvent(player)
-    def spawn_shop(self):
-        # shop = Game_ShopEvent()
 
-        
-        player = {
-            "name":PLAYER,
-            "level": self.level,
-            "money":self.money,
-            "score":self.score,
-            "lives":self.lives,
-            "items":{},
-            "power":{}
-        }
-        # save_player(player,"data/player.json")
-        
         
     def draw(self, screen):
         screen.erase()
@@ -260,7 +246,9 @@ class Game:
             if 1 <= y < HEIGHT - 1:
                 screen.addch(y, x, ENEMY_BULLET, enemy_bullet_color)
 
-        
+        if self.level % 3 == 0:
+         shop =    Game_ShopEvent(player)
+         shop.draw_fill_window_shop(screen)
         # Game over screen
         if self.game_over:
             message = "GAME OVER!"
