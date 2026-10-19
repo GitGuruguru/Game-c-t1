@@ -68,18 +68,18 @@ class Game:
         elif key in (curses.KEY_RIGHT, ord("d"), ord("D")):
             self.player_x = min(WIDTH - 4, self.player_x + 1)
 
-        # Shooting
-        elif key in (
-            ord(" "),
-            ord("w"),
-            ord("W"),
-            curses.KEY_UP
-        ):
-            if len(self.bullets) < 10:
-                self.bullets.append(
-                    [self.player_y - 1, self.player_x]
-                )
-        if key in (curses.KEY_LEFT,ord("A")) or key in (curses.KEY_RIGHT,ord("D")) and key in(
+        # # Shooting
+        # elif key in (
+        #     ord(" "),
+        #     ord("w"),
+        #     ord("W"),
+        #     curses.KEY_UP
+        # ):
+        #     if len(self.bullets) < 10:
+        #         self.bullets.append(
+        #             [self.player_y - 1, self.player_x]
+        #         )
+        if key in (curses.KEY_LEFT,ord("A"),ord("a")) or key in (curses.KEY_RIGHT,ord("D"),ord("d")) and key in(
                 ord(" "),
                 ord("w"),
                 ord("W"),
@@ -92,9 +92,6 @@ class Game:
                 if len(self.bullets) < 10:
                     self.bullets.append(
                         [self.player_y - 1, self.player_x])
-
-            
-
 
         # Move enemies
         speed = max(2, 6 - self.level)
@@ -269,5 +266,5 @@ class Game:
                 (WIDTH - len(restart)) // 2,
                 restart
             )
-
+        
         screen.refresh()

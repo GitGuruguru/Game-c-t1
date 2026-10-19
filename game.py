@@ -34,6 +34,7 @@ def main(stdscr):
            shoplevel.draw_fill_window_shop(stdscr)
            pass
         if game.game_over:
+            
             if key in (ord("r"), ord("R")):
                 game = Game()
             if key in (ord("q"), ord("Q")):

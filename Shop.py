@@ -1,6 +1,6 @@
 import curses , random , time 
 from Game_init import *
-
+import re as re
 WIDTH = 59
 HEIGHT = 22
 
@@ -49,7 +49,6 @@ class Game_ShopEvent():
             return True
         return False
     def get_cheat_code_konami(stdscr):
-                        
         key = stdscr.getch()
         konami_code.append(key)
         if konami_code == [curses.KEY_UP ,curses.KEY_UP,curses.KEY_DOWN,curses.KEY_DOWN,curses.KEY_RIGHT,curses.KEY_LEFT,curses.KEY_RIGHT,curses.KEY_LEFT,"B","A"]:
