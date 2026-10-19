@@ -6,7 +6,7 @@ from Game_init import Game
 from Shop import Game_ShopEvent
 from data.Saves import *
 
-FRAME_DELAY = 50
+FRAME_DELAY = 40
 
 def main(stdscr):
     curses.curs_set(0)
