@@ -1,4 +1,3 @@
-abilities = ["addhitbox", "rewind", "reload","ice age","volcano","fieryaura"]
 
 
 
