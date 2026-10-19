@@ -106,7 +106,7 @@ class Game:
                 for enemy_part in enemy:
                     for enemy_part_1 in enemy:
                         for x in enemy_part_1:
-                          hit_edge = any(x[0] + self.enemy_dir <= 2  or x[0] + self.enemy_dir >= WIDTH - 3)
+                          hit_edge = any(enemy_part_1[0] + self.enemy_dir <= 2  or enemy_part_1[0] + self.enemy_dir >= WIDTH - 3)
                           
                 if hit_edge:  
                     self.enemy_dir *= -1
@@ -228,11 +228,9 @@ class Game:
     
         enemy_color = curses.color_pair(3) | curses.A_BOLD
 
-        for enemy in self.enemies:
-            for enemy1 in enemy:
-                for cords,alive in enemy1:
-                    if alive and 1 <= cords[0] < HEIGHT - 1:
-                        screen.addstr(cords[0], cords[1], ENEMY, enemy_color)
+        for x, y, alive in self.enemies:
+            if alive and 1 <= y < HEIGHT - 1:
+                screen.addstr(y, x, ENEMY, enemy_color)
 
         # Player bullets
         bullet_color = curses.color_pair(4) | curses.A_BOLD
