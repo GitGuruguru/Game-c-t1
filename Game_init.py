@@ -3,15 +3,15 @@ from Shop import Game_ShopEvent
 from data.Saves  import *
 
 
-WIDTH = 180
-HEIGHT = 45
+WIDTH = 120
+HEIGHT = 20
 try:
     player = load_player("./data/player.json")
 except ReferenceError as er:
     print(er)
 
 PLAYER = "<A>"
-ENEMY = r"M"
+ENEMY = r"<W>"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
 class Game:
@@ -39,18 +39,20 @@ class Game:
 
     def spawn_enemies(self):
         self.enemies = []
-
+        enemy = []
         rows = min(3 + (self.level - 1) // 2, 5)
         cols = 8
-
+     
         for row in range(rows):
             for col in range(cols):
-                x = 5 + col * 5
-                y = 3 + row * 2
-                self.enemies.append([x, y, True])
+                for e in range(3):
+                    x = 5 + col * 5 + e
+                    y = 3 + row * 2 
+                    enemy.append([y,x])
+                self.enemies.append([enemy,True])
 
     def alive_enemies(self):
-        return [e for e in self.enemies if e[2]]
+        return [e for e in self.enemies if e[1]]
 
     def update(self, key):
         if self.game_over:
@@ -99,21 +101,20 @@ class Game:
 
         if self.frame % speed == 0:
             alive = self.alive_enemies()
-
-            hit_edge = any(
-                e[0] + self.enemy_dir <= 2
-                or e[0] + self.enemy_dir >= WIDTH - 3
-                for e in alive
-            )
-
-            if hit_edge:
-                self.enemy_dir *= -1
-
-                for enemy in alive:
-                    enemy[1] += 3
-            else:
-                for enemy in alive:
-                    enemy[0] += self.enemy_dir
+            print(self.alive_enemies)
+            for enemy in alive:
+                for enemy_part in enemy:
+                    for enemy_part_1 in enemy:
+                        for x in enemy_part_1:
+                          hit_edge = any(x[0] + self.enemy_dir <= 2  or x[0] + self.enemy_dir >= WIDTH - 3)
+                          
+                if hit_edge:  
+                    self.enemy_dir *= -1
+                    for enemy in alive:
+                        enemy[1] += 3
+                else:
+                    for enemy in alive:
+                        enemy[0] += self.enemy_dir
 
         # Enemy shooting
         alive = self.alive_enemies()
@@ -121,7 +122,7 @@ class Game:
         if alive and self.frame % max(2, 10 - self.level) == 0:
             enemy = random.choice(alive)
             self.enemy_bullets.append([enemy[1] + 1, enemy[0]])
-
+        
         # Move player bullets and check collisions
         new_bullets = []
 
@@ -130,11 +131,12 @@ class Game:
             hit = False
 
             for enemy in self.alive_enemies():
-                if bullet[0] == enemy[1] and bullet[1] == enemy[0]:
-                    enemy[2] = False
-                    self.score += 10
-                    hit = True
-                    break
+                for enemy_part in enemy:
+                    if bullet[0] == enemy_part[1] and bullet[1] == enemy_part[0]:
+                        enemy[2] = False
+                        self.score += 10
+                        hit = True
+                        break
 
             if not hit and bullet[0] > 1:
                 new_bullets.append(bullet)
@@ -226,9 +228,11 @@ class Game:
     
         enemy_color = curses.color_pair(3) | curses.A_BOLD
 
-        for x, y, alive in self.enemies:
-            if alive and 1 <= y < HEIGHT - 1:
-                screen.addstr(y, x, ENEMY, enemy_color)
+        for enemy in self.enemies:
+            for enemy1 in enemy:
+                for cords,alive in enemy1:
+                    if alive and 1 <= cords[0] < HEIGHT - 1:
+                        screen.addstr(cords[0], cords[1], ENEMY, enemy_color)
 
         # Player bullets
         bullet_color = curses.color_pair(4) | curses.A_BOLD
@@ -247,8 +251,9 @@ class Game:
                 screen.addch(y, x, ENEMY_BULLET, enemy_bullet_color)
 
         if self.level % 3 == 0:
-         shop =    Game_ShopEvent(player)
-         shop.draw_fill_window_shop(screen)
+            shop = Game_ShopEvent(player)
+            shop.draw_fill_window_shop(screen)
+
         # Game over screen
         if self.game_over:
             message = "GAME OVER!"

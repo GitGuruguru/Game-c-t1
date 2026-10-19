@@ -2,7 +2,7 @@ import curses , random , time
 from Game_init import *
 
 WIDTH = 59
-HEIGHT = 24
+HEIGHT = 22
 
 konami_code = []
 DEF_ITEMS =  {
