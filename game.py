@@ -30,21 +30,21 @@ def main(stdscr):
     shoplevel = Game_ShopEvent(player)
     while True:
         key = stdscr.getch()
-        if game.level  == 1:
-           shoplevel.draw_fill_window_shop(stdscr)
-           pass
-        if game.game_over:
+        # if game.level  == 1:
+        shoplevel.draw_fill_window_shop(stdscr)
+        #    pass
+        # if game.game_over:
             
-            if key in (ord("r"), ord("R")):
-                game = Game()
-            if key in (ord("q"), ord("Q")):
-                break
-        else:
-            game.update(key)
-        try:
-            game.draw(stdscr)
-        except curses.error:
-            pass
+        #     if key in (ord("r"), ord("R")):
+        #         game = Game()
+        #     if key in (ord("q"), ord("Q")):
+        #         break
+        # else:
+        #     game.update(key)
+        # try:
+        #     game.draw(stdscr)
+        # except curses.error:
+        #     pass
 
 
 if __name__ == "__main__":

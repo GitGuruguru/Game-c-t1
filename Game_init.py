@@ -31,11 +31,6 @@ except (ReferenceError, FileNotFoundError, ValueError, KeyError) as er:
     }
 
 # Ensure all required player fields exist.
-player.setdefault("score", 0)
-player.setdefault("lives", 3)
-player.setdefault("level", 1)
-player.setdefault("money", 0)
-
 
 class Game:
     def __init__(self):
@@ -254,7 +249,7 @@ class Game:
 
         # Player.
         now = time.monotonic()
-
+        
         if now < self.hit_until:
             player_color = curses.color_pair(2) | curses.A_BOLD
         else:

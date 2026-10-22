@@ -56,6 +56,7 @@ class Game_ShopEvent():
         return False
         
     def draw_fill_window_shop(self,screen):
+       
 
         if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
             pass
@@ -66,6 +67,7 @@ class Game_ShopEvent():
             return
         
         screen.erase()
+        curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
         rows,cols = screen.getmaxyx()
 
@@ -88,7 +90,9 @@ class Game_ShopEvent():
         )
         screen.addstr(0, 2, hud[:WIDTH - 4], curses.A_BOLD)                                                                                                                                                                                                                                                                                                                                                                                                                               
         random_item = "random.choice(DEF_ITEMS)"
-        random_power =" random.choice(DEF_POWERS)"
+        random_power = "random.choice(DEF_POWERS)"
+        key = screen.getch()
+        _, x, y, _, button_state = curses.getmouse()
         
         screen.addstr(
             HEIGHT // 6 , 
@@ -96,6 +100,12 @@ class Game_ShopEvent():
             "Sklep",
             curses.color_pair(2) | curses.A_BOLD
         )
+        screen.addstr(
+            HEIGHT // 8,
+            (WIDTH - len(f"X{x} Y{y}")) // 8 - 2,
+            f"X{x} Y{y}",
+            curses.color_pair(2) | curses.A_BOLD
+        ) 
         screen.addstr(
             HEIGHT // 2,
             (WIDTH - len("Kup")) // 3,
@@ -111,6 +121,7 @@ class Game_ShopEvent():
                 for x in range(29):
                     screen.addch(HEIGHT  -  17,((WIDTH  - 39) * i) + x ,'_',curses.color_pair(2) | curses.A_BOLD)
                     screen.addch(HEIGHT  -  7,((WIDTH  - 39) * i) + x ,'_',curses.color_pair(2) | curses.A_BOLD)
+        
         screen.addstr(
             HEIGHT  - 4 ,
            (WIDTH - len("Przejdz do nastepnej rondy")) // 3,
@@ -119,10 +130,11 @@ class Game_ShopEvent():
         )
         
         for i in range(4):
+            random_item = random.randint(1,5)
             screen.addstr(
                 HEIGHT // 2,
                 (WIDTH - len(random_item)) // 2 + i * 40 ,
-                random_item,
+                DEF_ITEMS[random_item],
                 curses.color_pair(2) | curses.A_BOLD
             )
         screen.addstr(
@@ -167,3 +179,4 @@ class Game_ShopEvent():
             self.player_name,
             curses.color_pair(2) | curses.A_BLINK
         )
+       
