@@ -5,25 +5,25 @@ WIDTH = 59
 HEIGHT = 22
 
 konami_code = []
-DEF_ITEMS =  {
-    "turbomotors" : 500,
-    "spacedefences": 240, 
-    "termalshield": 100,
-    "misledefence": 2000,
-    "hull reinforsments": 809
-}
+DEF_ITEMS =  [
+    "turbomotors",
+    "spacedefences", 
+    "termalshield",
+    "misledefence",
+    "hull reinforsments"
+]
 SPECIAL_ITEMS = {
     "state of the art defence system": 2505
 }
-DEF_POWERS = {
-    "Tempester" : 2505,
-    "Ground Zero" : 3005,
-    "Nemesis" : 5005,
-    "Omega" : 1205,
-    "Alpha" : 14005,
-    "Delta" : 2405,
-    "Equilibrium": 3125,
-}
+DEF_POWERS = [
+    "Tempester",
+    "Ground Zero",
+    "Nemesis",
+    "Omega",
+    "Alpha",
+    "Delta",
+    "Equilibrium",
+]
 SPECIAL_POWER = {
     "Fifth element" : 20000
 }
@@ -52,12 +52,52 @@ class Game_ShopEvent():
         key = stdscr.getch()
         konami_code.append(key)
         if konami_code == [curses.KEY_UP ,curses.KEY_UP,curses.KEY_DOWN,curses.KEY_DOWN,curses.KEY_RIGHT,curses.KEY_LEFT,curses.KEY_RIGHT,curses.KEY_LEFT,"B","A"]:
+        
             return True
         return False
+    def shop_items():
+        if key == curses.KEY_MOUSE:
+            try:
+                _, mouse_x, mouse_y, _, button_state = curses.getmouse()
         
+                if button_state & curses.BUTTON1_CLICKED:
+        
+                    # BUY
+                    row, start_x, end_x = buttons["buy"]
+                    if mouse_y == row and start_x <= mouse_x <= end_x:
+                        self.buy_item(screen)
+        
+                    # NEXT ROUND
+                    row, start_x, end_x = buttons["next_round"]
+                    if mouse_y == row and start_x <= mouse_x <= end_x:
+                        return "next_round"
+        
+                    # RANDOMISER
+                    row, start_x, end_x = buttons["randomiser"]
+                    if mouse_y == row and start_x <= mouse_x <= end_x:
+                        return "randomiser"
+        
+                    # INVENTORY
+                    row, start_x, end_x = buttons["inventory"]
+                    if mouse_y == row and start_x <= mouse_x <= end_x:
+                        return "inventory"
+        
+                    # SAVE
+                    row, start_x, end_x = buttons["save"]
+                    if mouse_y == row and start_x <= mouse_x <= end_x:
+                        return "save"
+        
+                    # EXIT
+                    row, start_x, end_x = buttons["exit"]
+                    if mouse_y == row and start_x <= mouse_x <= end_x:
+                        return "exit"
+        
+            except curses.error:
+                pass
+        
+        screen.refresh()
     def draw_fill_window_shop(self,screen):
        
-
         if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
             pass
         elif(self.MICROTRANSACTIONS != "enabled" or self.battle_pass != True):
@@ -89,10 +129,20 @@ class Game_ShopEvent():
             f" Pieniandze:{self.money} "
         )
         screen.addstr(0, 2, hud[:WIDTH - 4], curses.A_BOLD)                                                                                                                                                                                                                                                                                                                                                                                                                               
-        random_item = "random.choice(DEF_ITEMS)"
-        random_power = "random.choice(DEF_POWERS)"
+        
+        random_item = random.randint(0,4)
+        random_power = random.choice(DEF_POWERS)
+        
+        buttons = {
+            "buy": (HEIGHT - 4, 3, 10),
+            "next_round": (HEIGHT - 4, 15, 26),
+            "randomiser": (HEIGHT - 4, 30, 42),
+            "inventory": (HEIGHT - 4, 43, 55),
+            "save": (HEIGHT - 2, 3, 10),
+            "exit": (HEIGHT - 2, 15, 22),
+        }
         key = screen.getch()
-        _, x, y, _, button_state = curses.getmouse()
+
         
         screen.addstr(
             HEIGHT // 6 , 
@@ -100,12 +150,7 @@ class Game_ShopEvent():
             "Sklep",
             curses.color_pair(2) | curses.A_BOLD
         )
-        screen.addstr(
-            HEIGHT // 8,
-            (WIDTH - len(f"X{x} Y{y}")) // 8 - 2,
-            f"X{x} Y{y}",
-            curses.color_pair(2) | curses.A_BOLD
-        ) 
+      
         screen.addstr(
             HEIGHT // 2,
             (WIDTH - len("Kup")) // 3,
@@ -130,23 +175,17 @@ class Game_ShopEvent():
         )
         
         for i in range(4):
-            random_item = random.randint(1,5)
+             
             screen.addstr(
                 HEIGHT // 2,
-                (WIDTH - len(random_item)) // 2 + i * 40 ,
+                (WIDTH - len(DEF_ITEMS[random_item])) // 2 + i * 40 ,
                 DEF_ITEMS[random_item],
                 curses.color_pair(2) | curses.A_BOLD
-            )
+        )
         screen.addstr(
             HEIGHT // 3,
             (WIDTH - len(random_power)) // 2 + i * 40,
             random_power, 
-            curses.color_pair(2) | curses.A_BOLD
-        )
-        screen.addstr(
-            (HEIGHT - 4),
-            (WIDTH - len("Kup")) // 3 + 150,
-            "Kup",
             curses.color_pair(2) | curses.A_BOLD
         )
         screen.addstr(
@@ -179,4 +218,4 @@ class Game_ShopEvent():
             self.player_name,
             curses.color_pair(2) | curses.A_BLINK
         )
-       
+     
