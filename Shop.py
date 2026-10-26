@@ -78,8 +78,22 @@ def safe_addstr(stdscr, y, x, text, attr=0):
     except curses.error:
         pass
 
-
+def safe_addch(stdscr, y,x,text,attr=0):
+    rows, cols = stdscr.grtmaxyx()
+    if y < 0 or y >= rows or x < 0 or x >= cols :
+        return 
+    text = chr(text)
+ 
+    avalible = cols - x
+    if avalible <= 0 : 
+        return 
+    try:
+        stdscr.addnchr(y,x,text,avalible, attr)
+    except curses.error:
+        pass
+    
 class Game_ShopEvent:
+
     def __init__(self, player):
         self.player = player
 

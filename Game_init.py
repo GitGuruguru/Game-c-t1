@@ -5,7 +5,7 @@ import time
 WIDTH = 160
 HEIGHT = 30
 
-PLAYER = "<A>"
+PLAYER = r"</\>"
 ENEMY = r"\/"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
@@ -117,10 +117,11 @@ class Game:
             curses.KEY_UP,
         ):
             if len(self.bullets) < 10:
-                self.bullets.append([
-                    self.player_y - 1,
-                    self.player_x,
-                ])
+                if self.frame % 2 == 0 :
+                    self.bullets.append([
+                        self.player_y - 1,
+                        self.player_x,
+                    ])
 
         # Move enemies and reverse at the edges.
         speed = max(2, 6 - self.level)
