@@ -28,23 +28,42 @@ def main(stdscr):
     player = load_player("./data/player.json")
     game = Game()
     shoplevel = Game_ShopEvent(player)
+   
+def shop_screen(stdscr, player):
+    curses.curs_set(0)
+    curses.start_color()
+    curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    stdscr.keypad(True)
+    stdscr.timeout(-1)
+
+    shop = Game_ShopEvent(player)
+
     while True:
-        key = stdscr.getch()
-        # if game.level  == 1:
-        shoplevel.draw_fill_window_shop(stdscr)
-        #    pass
-        # if game.game_over:
-            
-        #     if key in (ord("r"), ord("R")):
-        #         game = Game()
-        #     if key in (ord("q"), ord("Q")):
-        #         break
-        # else:
-        #     game.update(key)
-        # try:
-        #     game.draw(stdscr)
-        # except curses.error:
-        #     pass
+        shop.draw_fill_window_shop(stdscr)
+        action = shop.shop_items(stdscr)
+
+        if action == "exit":
+            break
+
+        elif action == "inventory":
+            shop.show_inventory(stdscr)
+
+        elif action == "next_round":
+            return "next_round"
+
+        elif action == "save":
+            # Connect this to your existing save system.
+            return "save"
+
+    return "exit"
+
+
+# Example player data:
+player = load_player("data/player.json")
+
+# Launch the shop:
+result = curses.wrapper(shop_screen, player)
+
 
 
 if __name__ == "__main__":
