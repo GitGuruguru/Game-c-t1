@@ -3,8 +3,8 @@ import random
 
 from data.Saves import save_player
 
-WIDTH = 120
-HEIGHT = 20
+WIDTH = 160
+HEIGHT =30
 SAVE_PATH = "data/player.json"
 
 DEF_ITEMS = [
@@ -192,7 +192,7 @@ class Game_ShopEvent:
         centered(y + 2, offer["item"])
         centered(y + 3, offer["power"])
         centered(y + 4, f"Price: {offer['price']}")
-
+        
         if offer["item"] in self.items:
             centered(y + 5, "OWNED", owned_color)
         elif selected:

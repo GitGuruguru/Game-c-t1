@@ -2,11 +2,11 @@ import curses
 import random
 import time
 
-WIDTH = 120
-HEIGHT = 20
+WIDTH = 160
+HEIGHT = 30
 
 PLAYER = "<A>"
-ENEMY = "<W>"
+ENEMY = r"\/"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
 

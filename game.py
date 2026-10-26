@@ -89,7 +89,7 @@ def main(stdscr):
             continue
 
         game.draw(stdscr)
-
+        
         key = stdscr.getch()
 
         if game.game_over:
