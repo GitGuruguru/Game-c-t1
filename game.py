@@ -1,7 +1,6 @@
 import curses
 
 from Game_init import Game, init_game_colors
-from Shop import Game_ShopEvent
 from data.Saves import load_player, save_player
 
 FRAME_DELAY = 40

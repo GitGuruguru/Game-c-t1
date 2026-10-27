@@ -5,8 +5,8 @@ import time
 WIDTH = 160
 HEIGHT = 30
 
-PLAYER = r"<A>"
-ENEMY = r"\/"
+player_name = r"</A\>"
+ENEMY = r"\{}/"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
 
@@ -49,7 +49,7 @@ class Game:
         self.player_x = WIDTH // 2
         self.player_y = HEIGHT - 2
 
-        self.bullets = []
+        self.bullets = [] 
         self.enemy_bullets = []
         self.enemies = []
 
@@ -66,10 +66,13 @@ class Game:
         self.invulnerable_until = 0.0
 
         self.shop = None
+        if ["hull reinforcements"] in self.player["items"]:
+            player_name = r"</A\>"
+            self.player["lives"] += 10
 
         self.sync_player_data()
         self.spawn_enemies()
-
+ 
     def sync_player_data(self):
         """Keep all gameplay statistics in the shared player dictionary."""
         self.player["score"] = self.score
@@ -80,7 +83,7 @@ class Game:
     def spawn_enemies(self):
         self.enemies = []
 
-        rows = min(3 + (self.level - 1) // 2, 5)
+        rows = min(1 + (self.level - 1) // 2, 5)
         cols = 8
 
         for row in range(rows):
@@ -274,7 +277,7 @@ class Game:
             screen,
             self.player_y,
             self.player_x - 1,
-            PLAYER,
+            player_name,
             player_color,
         )
 
