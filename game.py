@@ -97,8 +97,7 @@ def main(stdscr):
                 break
 
             if key in (ord("r"), ord("R")):
-                # Start a fresh run while retaining purchased items
-                # and the player's current money.
+                
                 player["score"] = 0
                 player["lives"] = 3
                 player["level"] = 1

@@ -5,7 +5,7 @@ import time
 WIDTH = 160
 HEIGHT = 30
 
-PLAYER = r"</\>"
+PLAYER = r"<A>"
 ENEMY = r"\/"
 PLAYER_BULLET = "|"
 ENEMY_BULLET = "`"
@@ -45,7 +45,7 @@ def safe_addstr(screen, y, x, text, attr=0):
 class Game:
     def __init__(self, player):
         self.player = player
-
+    
         self.player_x = WIDTH // 2
         self.player_y = HEIGHT - 2
 
@@ -125,7 +125,8 @@ class Game:
 
         # Move enemies and reverse at the edges.
         speed = max(2, 6 - self.level)
-
+        if "turbomotors" in self.player["items"]:
+            speed  = 20
         if self.frame % speed == 0:
             alive = self.alive_enemies()
 
@@ -155,7 +156,13 @@ class Game:
                 enemy[1] + 1,
                 enemy[0] + 1,
             ])
-
+        if ["spacedefances"] in self.player["items"]:
+            for bulet in self.enemy_bullets:
+               if  bulet[0] - self.player_y == 3  : 
+                    rng =  random.randint(1,2)
+                    if rng == 1:
+                        self.enemy_bullets.pop(bullet)
+      
         # Move player bullets and detect collisions.
         remaining_bullets = []
 

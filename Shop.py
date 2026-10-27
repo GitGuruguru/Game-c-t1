@@ -37,7 +37,7 @@ POWER_PRICE = 100
 
 
 def init_shop_colors():
-    """Initialize shop-specific color pairs."""
+
     if not curses.has_colors():
         return
 
@@ -49,7 +49,6 @@ def init_shop_colors():
         except curses.error:
             background = curses.COLOR_BLACK
 
-        # Use pairs 5-9 so they don't conflict with the game.
         curses.init_pair(5, curses.COLOR_WHITE, background)
         curses.init_pair(6, curses.COLOR_CYAN, background)
         curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_CYAN)
@@ -91,7 +90,7 @@ def safe_addch(stdscr, y,x,text,attr=0):
         stdscr.addnchr(y,x,text,avalible, attr)
     except curses.error:
         pass
-    
+
 class Game_ShopEvent:
 
     def __init__(self, player):
@@ -179,7 +178,7 @@ class Game_ShopEvent:
         self.sync_from_player()
         self.message = f"Purchased {item} + {power} for {price}!"
         return True
-
+    
     def draw_card(self, stdscr, x, y, width, height, offer, selected=False):
         normal = curses.color_pair(5) | curses.A_BOLD
         highlight = curses.color_pair(6) | curses.A_BOLD
