@@ -1,5 +1,5 @@
 import json as json 
-
+import os
 def save_player(player,file_player):
    json_player = json.dumps(player)
    with open (file_player,'w') as player_file:
@@ -20,6 +20,9 @@ def load_player(file_player):
              "items" : {},
              "powers" : {}
          }
-         save_player(player,"./data/player.json")
-
+         if  os.path.exists("./data/player.json"):
+               save_player(player,"./data/player.json")
+         else:
+               os.mkdir("./data/player.json")
+               save_player(player,"./data/player.json")
    return player

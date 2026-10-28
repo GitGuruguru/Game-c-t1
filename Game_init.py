@@ -15,11 +15,11 @@ ROCKET = "@"
 
 SHOT_COOLDOWNS = {
     "bullet": 0.18,
-    "lasers": 0.60,
-    "rockets": 2.00,
+    "lasers": 0.30,
+    "rockets": 3.00,
 }
 
-ROCKET_RADIUS = 3
+ROCKET_RADIUS = 5
 ROCKET_DAMAGE_SCORE = 20
 EXPLOSION_DURATION = 5 # Frames
 
@@ -409,6 +409,7 @@ class Game:
             f"Level: {self.level} "
             f"Money: {self.money} "
             f"Weapon: {self.bullet_state}"
+            f"Reload {self.last_shot_time}"
         )
 
         safe_addstr(screen, 0, 2, hud, curses.A_BOLD)
@@ -476,8 +477,8 @@ class Game:
                     if dx * dx + dy * dy > radius * radius:
                         continue
 
-                    blast_x = x + dx
-                    blast_y = y + dy
+                    blast_x = x + dy
+                    blast_y = y +  (dx // 3)
 
                     if (
                         1 <= blast_x < WIDTH - 1
