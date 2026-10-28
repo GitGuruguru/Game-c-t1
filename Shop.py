@@ -1,20 +1,20 @@
-import curses , random , time 
-from Game_init import *
-import re as re
-WIDTH = 59
-HEIGHT = 22
+import curses
+import random
 
-konami_code = []
-DEF_ITEMS =  [
+from data.Saves import save_player
+
+WIDTH = 160
+HEIGHT =30
+SAVE_PATH = "data/player.json"
+
+DEF_ITEMS = [
     "turbomotors",
-    "spacedefences", 
+    "spacedefences",
     "termalshield",
     "misledefence",
-    "hull reinforsments"
+    "hull reinforsments",
 ]
-SPECIAL_ITEMS = {
-    "state of the art defence system": 2505
-}
+
 DEF_POWERS = [
     "Tempester",
     "Ground Zero",
@@ -24,199 +24,347 @@ DEF_POWERS = [
     "Delta",
     "Equilibrium",
 ]
-SPECIAL_POWER = {
-    "Fifth element" : 20000
+
+ITEM_PRICES = {
+    "turbomotors": 100,
+    "spacedefences": 150,
+    "termalshield": 200,
+    "misledefence": 250,
+    "hull reinforsments": 300,
 }
 
-class Game_ShopEvent():
-    def __init__(self,player):
-        self.player_name = player["name"]
-        self.money = player["money"]
-        self.score =player["score"]
-        self.level = player["level"] 
-        self.items = player["items"]
-        self.powers = player["power"]
-        self.lives = player["lives"]
-        self.is_cheat_enabled = False
-        self.battle_pass = True
-        self.MICROTRANSACTIONS = "enabled"
+POWER_PRICE = 100
 
-    def get_cheat_code_classic(stdscr):
+
+def init_shop_colors():
+
+    if not curses.has_colors():
+        return
+
+    try:
+        curses.start_color()
+        try:
+            curses.use_default_colors()
+            background = -1
+        except curses.error:
+            background = curses.COLOR_BLACK
+
+        curses.init_pair(5, curses.COLOR_WHITE, background)
+        curses.init_pair(6, curses.COLOR_CYAN, background)
+        curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_CYAN)
+        curses.init_pair(8, curses.COLOR_YELLOW, background)
+        curses.init_pair(9, curses.COLOR_GREEN, background)
+
+    except curses.error:
+        pass
+
+
+def safe_addstr(stdscr, y, x, text, attr=0):
+    """Write text only when the target coordinates are valid."""
+    rows, cols = stdscr.getmaxyx()
+
+    if y < 0 or y >= rows or x < 0 or x >= cols:
+        return
+
+    text = str(text)
+    available = cols - x
+
+    if available <= 0:
+        return
+
+    try:
+        stdscr.addnstr(y, x, text, available, attr)
+    except curses.error:
+        pass
+
+def safe_addch(stdscr, y,x,text,attr=0):
+    rows, cols = stdscr.grtmaxyx()
+    if y < 0 or y >= rows or x < 0 or x >= cols :
+        return 
+    text = chr(text)
+ 
+    avalible = cols - x
+    if avalible <= 0 : 
+        return 
+    try:
+        stdscr.addnchr(y,x,text,avalible, attr)
+    except curses.error:
+        pass
+
+class Game_ShopEvent:
+
+    def __init__(self, player):
+        self.player = player
+
+        # Ensure these fields are present and normalized.
+        self.player.setdefault("name", "Player")
+        self.player.setdefault("money", 0)
+        self.player.setdefault("score", 0)
+        self.player.setdefault("level", 1)
+        self.player.setdefault("lives", 3)
+
+        if not isinstance(self.player.get("items"), list):
+            value = self.player.get("items")
+            self.player["items"] = [value] if value else []
+
+        if not isinstance(self.player.get("power"), list):
+            value = self.player.get("power")
+            self.player["power"] = [value] if value else []
+
+        self.items = self.player["items"]
+        self.powers = self.player["power"]
+
+        self.sync_from_player()
+
+        self.offers = []
+        self.selected_item = 0
+        self.message = "Select an offer and press BUY."
+
+        self.randomise_offers()
+
+    def sync_from_player(self):
+        """Refresh shop stats after gameplay or purchases."""
+        self.money = self.player["money"]
+        self.score = self.player["score"]
+        self.level = self.player["level"]
+        self.lives = self.player["lives"]
+
+        self.items = self.player["items"]
+        self.powers = self.player["power"]
+
+    def randomise_offers(self):
+        """Generate three distinct defensive-item offers."""
+        selected_items = random.sample(
+            DEF_ITEMS, k=min(3, len(DEF_ITEMS))
+        )
+
+        self.offers = []
+
+        for item in selected_items:
+            self.offers.append({
+                "item": item,
+                "power": random.choice(DEF_POWERS),
+                "price": ITEM_PRICES[item] + POWER_PRICE,
+            })
+
+        self.selected_item = 0
+        self.message = "New offers generated!"
+
+    def buy_item(self):
+        if not self.offers:
+            self.message = "No offers available!"
+            return False
+
+        self.sync_from_player()
+        offer = self.offers[self.selected_item]
+
+        item = offer["item"]
+        power = offer["power"]
+        price = offer["price"]
+
+        if item in self.items:
+            self.message = "You already own this item!"
+            return False
+
+        if self.money < price:
+            self.message = f"Not enough money! Need {price}."
+            return False
+
+        # Update the shared player dictionary.
+        self.player["money"] -= price
+        self.items.append(item)
+        self.powers.append(power)
+
+        self.sync_from_player()
+        self.message = f"Purchased {item} + {power} for {price}!"
+        return True
+    
+    def draw_card(self, stdscr, x, y, width, height, offer, selected=False):
+        normal = curses.color_pair(5) | curses.A_BOLD
+        highlight = curses.color_pair(6) | curses.A_BOLD
+        owned_color = curses.color_pair(9) | curses.A_BOLD
+
+        border_color = highlight if selected else normal
+
+        safe_addstr(stdscr, y, x, "+" + "-" * (width - 2) + "+", border_color)
+        safe_addstr(
+            stdscr, y + height - 1, x,
+            "+" + "-" * (width - 2) + "+", border_color
+        )
+
+        for row in range(y + 1, y + height - 1):
+            safe_addstr(stdscr, row, x, "|", border_color)
+            safe_addstr(stdscr, row, x + width - 1, "|", border_color)
+
+        def centered(row, value, attr=normal):
+            value = str(value)[:width - 2]
+            col = x + max(1, (width - len(value)) // 2)
+            safe_addstr(stdscr, row, col, value, attr)
+
+        centered(y + 1, f"Offer {self.offers.index(offer) + 1}")
+        centered(y + 2, offer["item"])
+        centered(y + 3, offer["power"])
+        centered(y + 4, f"Price: {offer['price']}")
         
-        key = stdscr.getch()
-        konami_code.append(key)
-        if konami_code == ["W","A","S","D","R"]:
-            return True
-        return False
-    def get_cheat_code_konami(stdscr):
-        key = stdscr.getch()
-        konami_code.append(key)
-        if konami_code == [curses.KEY_UP ,curses.KEY_UP,curses.KEY_DOWN,curses.KEY_DOWN,curses.KEY_RIGHT,curses.KEY_LEFT,curses.KEY_RIGHT,curses.KEY_LEFT,"B","A"]:
-        
-            return True
-        return False
-    def shop_items(self,stdscr):
-        buttons = {
-                    "buy": (HEIGHT - 4, 3, 10),
-                    "next_round": (HEIGHT - 4, 15, 26),
-                    "randomiser": (HEIGHT - 4, 30, 42),
-                    "inventory": (HEIGHT - 4, 43, 55),
-                    "save": (HEIGHT - 2, 3, 10),
-                    "exit": (HEIGHT - 2, 15, 22),
-                }
-        key = stdscr.getch()
-        if key == curses.KEY_MOUSE:
-            try:
-                _, mouse_x, mouse_y, _, button_state = curses.getmouse()
-        
-                if button_state & curses.BUTTON1_CLICKED:
-        
-                    # BUY
-                    row, start_x, end_x = buttons["buy"]
-                    if mouse_y == row and start_x <= mouse_x <= end_x:
-                        self.buy_item(stdscr)
-        
-                    # NEXT ROUND
-                    row, start_x, end_x = buttons["next_round"]
-                    if mouse_y == row and start_x <= mouse_x <= end_x:
-                        return "next_round"
-        
-                    # RANDOMISER
-                    row, start_x, end_x = buttons["randomiser"]
-                    if mouse_y == row and start_x <= mouse_x <= end_x:
-                        return "randomiser"
-        
-                    # INVENTORY
-                    row, start_x, end_x = buttons["inventory"]
-                    if mouse_y == row and start_x <= mouse_x <= end_x:
-                        return "inventory"
-        
-                    # SAVE
-                    row, start_x, end_x = buttons["save"]
-                    if mouse_y == row and start_x <= mouse_x <= end_x:
-                        return "save"
-        
-                    # EXIT
-                    row, start_x, end_x = buttons["exit"]
-                    if mouse_y == row and start_x <= mouse_x <= end_x:
-                        return "exit"
-        
-            except curses.error:
-                pass
-        
-        stdscr.refresh()
-    def draw_fill_window_shop(self,stdscr):
-       
-        if(self.MICROTRANSACTIONS == "enabled" and self.battle_pass == True):
-            pass
-        elif(self.MICROTRANSACTIONS != "enabled" or self.battle_pass != True):
-            print("Wlacz Microtransacje albo/i  batlepass")
-            self.fill_window()
-        if(self.is_cheat_enabled == True):
-            return
-        
+        if offer["item"] in self.items:
+            centered(y + 5, "OWNED", owned_color)
+        elif selected:
+            centered(y + 5, "SELECTED", highlight)
+
+    def draw_fill_window_shop(self, stdscr):
+        rows, cols = stdscr.getmaxyx()
         stdscr.erase()
-        curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
-
-        rows,cols = stdscr.getmaxyx()
 
         if rows < HEIGHT or cols < WIDTH:
-            stdscr.addstr(
-                0, 0,
+            safe_addstr(
+                stdscr, 0, 0,
                 f"Terminal too small! Need {WIDTH}x{HEIGHT}."
             )
             stdscr.refresh()
             return
 
+        self.sync_from_player()
+
+        stdscr.bkgd(" ", curses.color_pair(5))
         stdscr.border()
 
-        # Scoreboard
         hud = (
-            f" Score:{self.score} "
-            f" Zycia:{self.lives} "
-            f" Poziom:{self.level} "
-            f" Pieniandze:{self.money} "
+            f" Score:{self.score} Lives:{self.lives}"
+            f" Level:{self.level} Money:{self.money} "
         )
-        stdscr.addstr(0, 2, hud[:WIDTH - 4], curses.A_BOLD)                                                                                                                                                                                                                                                                                                                                                                                                                               
-        
-        random_item = random.randint(0,4)
-        random_power = random.choice(DEF_POWERS)
+        safe_addstr(stdscr, 0, 2, hud, curses.color_pair(5) | curses.A_BOLD)
 
-        
+        safe_addstr(
+            stdscr, 1, (WIDTH - len("SPACE SHOP")) // 2,
+            "SPACE SHOP", curses.color_pair(6) | curses.A_BOLD
+        )
 
-        
-        stdscr.addstr(
-            HEIGHT // 6 , 
-           (WIDTH - len("Sklep")) // 5 - 1,
-            "Sklep",
-            curses.color_pair(2) | curses.A_BOLD
+        card_y = 3
+        card_height = 7
+        gap = 1
+        card_width = (WIDTH - 2 - 2 * gap) // 3
+
+        for i, offer in enumerate(self.offers):
+            x = 1 + i * (card_width + gap)
+            self.draw_card(
+                stdscr, x, card_y, card_width, card_height,
+                offer, selected=(i == self.selected_item)
+            )
+
+        controls = (
+            "[1-3] Select  [E] Buy  [R] Random  "
+            "[I] Inventory  [Q] Resume"
         )
-      
-        stdscr.addstr(
-            HEIGHT // 2,
-            (WIDTH - len("Kup")) // 3,
-            "Kup",
-            curses.color_pair(2) | curses.A_BOLD
+        safe_addstr(stdscr, 12, 2, controls, curses.color_pair(8) | curses.A_BOLD)
+
+        safe_addstr(
+            stdscr, 14, 2,
+            self.message[:WIDTH - 4],
+            curses.color_pair(5) | curses.A_BOLD
         )
-        
-        for i in range(3):
-            i += 1
-            for y in range(10):
-                stdscr.addch(((HEIGHT - 16) + y) ,(WIDTH  - 10) * i  ,'|',curses.color_pair(2) | curses.A_BOLD )
-                stdscr.addch(((HEIGHT - 16) + y) ,(WIDTH  - 40) * i  ,'|',curses.color_pair(2) | curses.A_BOLD )
-                for x in range(29):
-                    stdscr.addch(HEIGHT  -  17,((WIDTH  - 39) * i) + x ,'_',curses.color_pair(2) | curses.A_BOLD)
-                    stdscr.addch(HEIGHT  -  7,((WIDTH  - 39) * i) + x ,'_',curses.color_pair(2) | curses.A_BOLD)
-        
-        stdscr.addstr(
-            HEIGHT  - 4 ,
-           (WIDTH - len("Przejdz do nastepnej rondy")) // 3,
-           "Przejdz do nastepnej rondy",
-           curses.color_pair(2) | curses.A_BOLD
+
+        safe_addstr(
+            stdscr, 17, 2,
+            "[N] Next round    [S] Save",
+            curses.color_pair(8) | curses.A_BOLD
         )
-        
-        for i in range(4):
-             
-            stdscr.addstr(
-                HEIGHT // 2,
-                (WIDTH - len(DEF_ITEMS[random_item])) // 2 + i * 40 ,
-                DEF_ITEMS[random_item],
-                curses.color_pair(2) | curses.A_BOLD
+
+        stdscr.refresh()
+
+    def shop_items(self, stdscr, key=None):
+        """Process one shop key. Return an action when needed."""
+        if key is None:
+            key = stdscr.getch()
+
+        if key == -1:
+            return None
+
+        if key in (ord("e"), ord("E")):
+            self.buy_item()
+
+        elif key in (ord("r"), ord("R")):
+            self.randomise_offers()
+
+        elif key in (ord("i"), ord("I")):
+            return "inventory"
+
+        elif key in (ord("n"), ord("N")):
+            return "next_round"
+
+        elif key in (ord("s"), ord("S")):
+            try:
+                save_player(self.player, SAVE_PATH)
+                self.message = "Game saved!"
+                return "save"
+            except (OSError, ValueError, TypeError) as error:
+                self.message = f"Save failed: {error}"
+
+        elif key in (ord("q"), ord("Q"), 27):
+            return "exit"
+
+        elif key in (ord("1"), ord("2"), ord("3")):
+            index = key - ord("1")
+
+            if index < len(self.offers):
+                self.selected_item = index
+                self.message = f"Selected: {self.offers[index]['item']}"
+
+        elif key == curses.KEY_LEFT:
+            if self.offers:
+                self.selected_item = (
+                    self.selected_item - 1
+                ) % len(self.offers)
+
+        elif key == curses.KEY_RIGHT:
+            if self.offers:
+                self.selected_item = (
+                    self.selected_item + 1
+                ) % len(self.offers)
+
+        return None
+
+    def show_inventory(self, stdscr):
+        """Display inventory without writing outside the terminal."""
+        rows, cols = stdscr.getmaxyx()
+        stdscr.erase()
+        stdscr.border()
+
+        safe_addstr(
+            stdscr, 2, 2, "YOUR INVENTORY",
+            curses.color_pair(6) | curses.A_BOLD
         )
-        stdscr.addstr(
-            HEIGHT // 3,
-            (WIDTH - len(random_power)) // 2 + i * 40,
-            random_power, 
-            curses.color_pair(2) | curses.A_BOLD
+
+        safe_addstr(stdscr, 4, 2, "Defensive items:")
+
+        row = 5
+        if self.items:
+            for item in self.items:
+                if row >= rows - 5:
+                    break
+                safe_addstr(stdscr, row, 4, f"- {item}")
+                row += 1
+        else:
+            safe_addstr(stdscr, row, 4, "No items purchased.")
+            row += 1
+
+        row += 1
+        if row < rows - 2:
+            safe_addstr(stdscr, row, 2, "Powers:")
+            row += 1
+
+        if self.powers:
+            for power in self.powers:
+                if row >= rows - 2:
+                    break
+                safe_addstr(stdscr, row, 4, f"- {power}")
+                row += 1
+        elif row < rows - 2:
+            safe_addstr(stdscr, row, 4, "No powers purchased.")
+
+        safe_addstr(
+            stdscr, rows - 2, 2,
+            "Press any key to return.", curses.A_BOLD
         )
-        stdscr.addstr(
-           (HEIGHT - 4),
-           (WIDTH - len("Exit")) // 3 + 130,
-           "Exit",
-           curses.color_pair(2) | curses.A_BOLD
-        )
-        stdscr.addstr(
-            (HEIGHT - 4),
-            (WIDTH - len("Reset")) // 3 + 110,
-            "Randomiser",
-            curses.color_pair(2) | curses.A_BOLD
-        )
-        stdscr.addstr(
-            (HEIGHT - 4),
-            (WIDTH - len("Inventory")) // 3 + 90,
-            "Inventory",
-            curses.color_pair(2) | curses.A_BOLD
-        )
-        stdscr.addstr(
-            HEIGHT-4,
-            (WIDTH - len("Save")) // 3 + 70,
-            "Save",
-            curses.color_pair(2) | curses.A_BOLD
-        )
-        stdscr.addstr(
-            HEIGHT - 5 ,
-            (WIDTH - len(self.player_name)) // 3 + 50,
-            self.player_name,
-            curses.color_pair(2) | curses.A_BLINK
-        )
-     
+
+        stdscr.refresh()
+        stdscr.getch()
