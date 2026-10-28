@@ -1,7 +1,7 @@
 import curses
 
 from Game_init import Game, init_game_colors
-from data.Saves import load_player, save_player
+from data.Saves import load_player, save_player 
 
 FRAME_DELAY = 40
 SAVE_PATH = "data/player.json"

@@ -4,8 +4,7 @@ class Enemy():
         self.xp = xp_gain
         self.dmg = dmg
         self.speed = speed
-        self.x = x 
-        self.y = y
+        
 class s_tier_enemy(Enemy):
     def __init__(self, hp, xp_gain, dmg, speed, ability):
         super().__init__(hp, xp_gain, dmg, speed)

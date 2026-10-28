@@ -2,7 +2,7 @@ import curses
 import random
 import time
 
-WIDTH = 160
+WIDTH = 160 
 HEIGHT = 30
 
 PLAYER_NAME = r"</A\>"
@@ -402,14 +402,32 @@ class Game:
             return
 
         screen.border()
-
+        is_reloaded = "Reloading... "
+        reload_b = time.monotonic() - self.last_shot_time -4
+        
+        if self.bullet_state == "rocket":   
+           reload_b = time.monotonic() - self.last_shot_time - 4
+           if reload_b >= 0:
+               reload_b = 0
+               is_reloaded = " Done"
+        elif self.bullet_state == "laser":
+            reload_b = time.monotonic() - self.last_shot_time - 0.30
+            if reload_b >= 0:
+                reload_b = 0
+                is_reloaded = "Done"
+        elif self.bullet_state == "bullet":
+            reload_b = time.monotonic() - self.last_shot_time - 0.18
+            if reload_b >= 0:
+                reload_b = 0
+                is_reloaded = "Done"
+        
         hud = (
             f"Score: {self.score} "
             f"Lives: {self.lives} "
             f"Level: {self.level} "
             f"Money: {self.money} "
             f"Weapon: {self.bullet_state}"
-            f"Reload {self.last_shot_time}"
+            f"Reload  {  reload_b , is_reloaded}"
         )
 
         safe_addstr(screen, 0, 2, hud, curses.A_BOLD)
