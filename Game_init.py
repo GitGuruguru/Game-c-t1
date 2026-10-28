@@ -409,7 +409,7 @@ class Game:
            reload_b = time.monotonic() - self.last_shot_time - 4
            if reload_b >= 0:
                reload_b = 0
-               is_reloaded = " Done" 
+               is_reloaded = " Done"
         elif self.bullet_state == "laser":
             reload_b = time.monotonic() - self.last_shot_time - 0.30
             if reload_b >= 0:
