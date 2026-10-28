@@ -10,7 +10,7 @@ SAVE_PATH = "data/player.json"
 def get_player():
     """Load player data or create a safe default player."""
     try:
-        player = load_player(SAVE_PATH)
+        player = load_player(SAVE_PATH) 
         if not isinstance(player, dict):
             raise ValueError("Invalid player data")
     except (OSError, ValueError, KeyError, TypeError):
