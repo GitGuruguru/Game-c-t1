@@ -1,11 +1,13 @@
 """Core simulation and terminal renderer for the Starfall arcade shooter."""
-import curses
 import random
 import time
-import sys
-from pathlib import Path
 
-from data.Saves import load_player
+try:
+    import curses
+except ImportError:  # Keep the simulation/rendering usable on stock Windows Python.
+    import curses_compat as curses
+
+from data.Saves import load_player, player_save_path
 
 
 PLAYER = "<A>"
@@ -53,6 +55,8 @@ class Game:
         self.player_data.setdefault("powers", self.player_data["power"])
         self.player_x = 30
         self.player_y = 20
+        self.width = 80
+        self.height = 24
         self.bullets = []  # dicts: x, y, type, pierce
         self.enemy_bullets = []
         self.enemies = []  # dicts with position, type, hp, and alive
@@ -163,6 +167,7 @@ class Game:
         if key == -1:
             return
         width, height = self.dimensions(screen)
+        self.width, self.height = width, height
         self.player_y = height - 2
         self.player_x = min(max(2, self.player_x), width - 3)
         if self.game_over:
@@ -179,13 +184,7 @@ class Game:
             elif key in (ord("s"), ord("S")):
                 from data.Saves import save_player
                 self.sync_player_data()
-                if getattr(sys, "frozen", False):
-                    save_dir = Path.home() / "AppData" / "Roaming" / "Starfall"
-                    save_dir.mkdir(parents=True, exist_ok=True)
-                    save_path = save_dir / "player.json"
-                else:
-                    save_path = Path("./data/player.json")
-                save_player(self.player_data, str(save_path))
+                save_player(self.player_data, player_save_path())
                 self.message = "Progress saved."
                 self.message_until = time.monotonic() + 2
             elif key in (ord("n"), ord("N"), ord("q"), ord("Q"), 10, 13):
@@ -271,6 +270,7 @@ class Game:
         screen.erase()
         rows, cols = screen.getmaxyx()
         width, height = self.dimensions(screen)
+        self.width, self.height = width, height
         if rows < 12 or cols < 20:
             safe_addstr(screen, 0, 0, "Resize terminal to at least 20x12 to play.", curses.A_BOLD)
             screen.refresh()

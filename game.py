@@ -1,25 +1,16 @@
 """Launch Starfall, a responsive terminal arcade shooter."""
-import curses
 import os
 import sys
 import time
 from pathlib import Path
 
+try:
+    import curses
+except ImportError:  # Standard Windows Python does not ship _curses.
+    import curses_compat as curses
+
 from Game_init import Game
-from data.Saves import load_player, save_player
-
-
-def player_save_path():
-    if getattr(sys, "frozen", False):
-        save_dir = Path(os.environ.get("APPDATA", Path.home())) / "Starfall"
-        save_dir.mkdir(parents=True, exist_ok=True)
-        save_path = save_dir / "player.json"
-        if not save_path.exists():
-            bundled = Path(sys._MEIPASS) / "data" / "player.json"
-            if bundled.exists():
-                save_path.write_bytes(bundled.read_bytes())
-        return str(save_path)
-    return "./data/player.json"
+from data.Saves import load_player, player_save_path, save_player
 
 
 def setup_colors():
@@ -48,13 +39,20 @@ def main(stdscr):
     stdscr.nodelay(True)
     setup_colors()
     save_path = player_save_path()
+    if getattr(sys, "frozen", False) and not Path(save_path).exists():
+        bundled = Path(sys._MEIPASS) / "data" / "player.json"
+        if bundled.exists():
+            try:
+                Path(save_path).write_bytes(bundled.read_bytes())
+            except OSError:
+                pass
     player = load_player(save_path)
     game = Game(player)
     last_key_time = 0.0
     while True:
         try:
             key = stdscr.getch()
-            if key in (ord("q"), ord("Q")) and (game.game_over or game.shop_open):
+            if key in (ord("q"), ord("Q")):
                 break
             # Repeating movement while a key is held keeps motion smooth on terminals
             # that emit a key only once; curses keypad repeat still handles arrows.
