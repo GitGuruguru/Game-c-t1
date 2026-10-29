@@ -108,7 +108,7 @@ class Game:
         self.enemies = []
 
         rows = min(1 + (self.level - 1) // 2, 5)
-        cols = 8
+        cols = 10
 
         for row in range(rows):
             for col in range(cols):
@@ -136,7 +136,7 @@ class Game:
 
         self.frame += 1
         now = time.monotonic()
-
+         
         # Player movement.
         if key in (curses.KEY_LEFT, ord("a"), ord("A")):
             self.player_x = max(3, self.player_x - 1)
@@ -145,11 +145,11 @@ class Game:
             self.player_x = min(WIDTH - 4, self.player_x + 1)
 
         # Weapon selection.
-        if key == ord("0"):
+        if key == ord("1"):
             self.bullet_state = "bullet"
-        elif key == ord("1"):
-            self.bullet_state = "lasers"
         elif key == ord("2"):
+            self.bullet_state = "lasers"
+        elif key == ord("3"):
             self.bullet_state = "rockets"
 
         # Shooting cooldown. Key-repeat cannot bypass this timer.
@@ -189,7 +189,7 @@ class Game:
                         self.last_shot_time = now
 
         # Enemy movement.
-        speed = max(2, 6 - self.level)
+        speed = max(2, 8 - self.level)
 
         if "turbomotors" in self.player.get("items", []):
             speed = 1

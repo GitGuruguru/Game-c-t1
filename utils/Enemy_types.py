@@ -4,6 +4,7 @@ class Enemy():
         self.xp = xp_gain
         self.dmg = dmg
         self.speed = speed
+
         
 class s_tier_enemy(Enemy):
     def __init__(self, hp, xp_gain, dmg, speed, ability):
@@ -20,7 +21,8 @@ class cluster_capitan(boss_tier_enemy):
         super().__init__(hp, xp_gain, dmg, speed, ability, phases)
 
     def misle_barrage():
-        pass
+        def update_for_attack1():
+            
     def icbm():
         pass
     def active_rapair():
