@@ -164,8 +164,6 @@ class Game:
         self.message_until = time.monotonic() + 2.4
 
     def update(self, key, screen):
-        if key == -1:
-            return
         width, height = self.dimensions(screen)
         self.width, self.height = width, height
         self.player_y = height - 2

@@ -1,5 +1,4 @@
 """Launch Starfall, a responsive terminal arcade shooter."""
-import os
 import sys
 import time
 from pathlib import Path
@@ -48,20 +47,14 @@ def main(stdscr):
                 pass
     player = load_player(save_path)
     game = Game(player)
-    last_key_time = 0.0
     while True:
         try:
             key = stdscr.getch()
             if key in (ord("q"), ord("Q")):
                 break
-            # Repeating movement while a key is held keeps motion smooth on terminals
-            # that emit a key only once; curses keypad repeat still handles arrows.
-            now = time.monotonic()
-            if key != -1:
-                game.update(key, stdscr)
-                last_key_time = now
-            elif now - last_key_time < 0.20:
-                pass
+            # Advance the simulation on every frame; -1 means only that no key
+            # arrived during this poll, not that the game should pause.
+            game.update(key, stdscr)
             game.draw(stdscr)
             time.sleep(1 / 60)
         except curses.error:
