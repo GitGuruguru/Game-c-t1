@@ -1,50 +1,66 @@
-import curses
-import random
+"""Launch Starfall, a responsive terminal arcade shooter."""
+import sys
 import time
+from pathlib import Path
+
+try:
+    import curses
+except ImportError:  # Standard Windows Python does not ship _curses.
+    import curses_compat as curses
 
 from Game_init import Game
-from Shop import Game_ShopEvent
-from data.Saves import *
+from data.Saves import load_player, player_save_path, save_player
 
-FRAME_DELAY = 40
 
-def main(stdscr):
-    curses.curs_set(0)
-    stdscr.keypad(True)
-    stdscr.timeout(FRAME_DELAY)
-    # Enable terminal colors
-    if curses.has_colors():
-        curses.start_color()
-        
+def setup_colors():
+    if not curses.has_colors():
+        return
+    curses.start_color()
+    try:
+        curses.use_default_colors()
+    except curses.error:
+        pass
+    pairs = ((1, curses.COLOR_CYAN), (2, curses.COLOR_RED), (3, curses.COLOR_GREEN),
+             (4, curses.COLOR_YELLOW), (5, curses.COLOR_MAGENTA), (6, curses.COLOR_BLUE))
+    for pair, foreground in pairs:
         try:
-            curses.use_default_colors()
+            curses.init_pair(pair, foreground, -1)
         except curses.error:
             pass
 
-        curses.init_pair(1, curses.COLOR_MAGENTA, -1)
-        curses.init_pair(2, curses.COLOR_RED, -1)
-        curses.init_pair(3, curses.COLOR_GREEN, -1)
-        curses.init_pair(4, curses.COLOR_YELLOW, -1)
-    player = load_player("./data/player.json")
-    game = Game()
-    shoplevel = Game_ShopEvent(player)
+
+def main(stdscr):
+    try:
+        curses.curs_set(0)
+    except curses.error:
+        pass
+    stdscr.keypad(True)
+    stdscr.nodelay(True)
+    setup_colors()
+    save_path = player_save_path()
+    if getattr(sys, "frozen", False) and not Path(save_path).exists():
+        bundled = Path(sys._MEIPASS) / "data" / "player.json"
+        if bundled.exists():
+            try:
+                Path(save_path).write_bytes(bundled.read_bytes())
+            except OSError:
+                pass
+    player = load_player(save_path)
+    game = Game(player)
     while True:
-        key = stdscr.getch()
-        # if game.level  == 1:
-        shoplevel.draw_fill_window_shop(stdscr)
-        #    pass
-        # if game.game_over:
-            
-        #     if key in (ord("r"), ord("R")):
-        #         game = Game()
-        #     if key in (ord("q"), ord("Q")):
-        #         break
-        # else:
-        #     game.update(key)
-        # try:
-        #     game.draw(stdscr)
-        # except curses.error:
-        #     pass
+        try:
+            key = stdscr.getch()
+            if key in (ord("q"), ord("Q")):
+                break
+            # Advance the simulation on every frame; -1 means only that no key
+            # arrived during this poll, not that the game should pause.
+            game.update(key, stdscr)
+            game.draw(stdscr)
+            time.sleep(1 / 60)
+        except curses.error:
+            continue
+    game.sync_player_data()
+    save_player(game.player_data, save_path)
 
 
 if __name__ == "__main__":

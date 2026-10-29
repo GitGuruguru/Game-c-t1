@@ -1,4 +1,27 @@
-import json as json 
+import json as json
+import os
+import sys
+from pathlib import Path
+
+
+def player_save_path():
+    if not getattr(sys, "frozen", False):
+        return "./data/player.json"
+
+    appdata = Path(os.environ.get("APPDATA", Path.home())) / "Starfall"
+    beside_exe = Path(sys.executable).resolve().parent / "Starfall_Data"
+    for folder in (appdata, beside_exe):
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            path = folder / "player.json"
+            # Check an existing save is writable too; a read-only stale save should
+            # not prevent the game from starting with its local fallback.
+            with path.open("a", encoding="utf-8"):
+                pass
+            return str(path)
+        except OSError:
+            continue
+    return str(beside_exe / "player.json")
 
 def save_player(player,file_player):
    json_player = json.dumps(player)
