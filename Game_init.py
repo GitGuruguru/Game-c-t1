@@ -27,6 +27,10 @@ ITEMS = {
     "Repair Kit": {"cost": 90, "power": "Defense", "description": "Restore one life"},
     "Nova Core": {"cost": 300, "power": "Arcane", "description": "Explosive shots"},
     "Pulse Core": {"cost": 240, "power": "Arcane", "description": "Shock nearby enemies"},
+    "Afterburner": {"cost": 170, "power": "Mobility", "description": "Move farther per tap"},
+    "Phase Drive": {"cost": 230, "power": "Mobility", "description": "Mobility set ability"},
+    "Rocket Pod": {"cost": 260, "power": "Ordnance", "description": "Low damage rockets with splash"},
+    "Blast Capacitor": {"cost": 190, "power": "Ordnance", "description": "Widen rocket splash"},
     "Extra Life": {"cost": 120, "power": "Survival", "description": "Add one life", "repeatable": True},
 }
 POWER_SETS = {
@@ -34,6 +38,8 @@ POWER_SETS = {
     "Laser": ("Piercing Laser", "Prism Beam"),
     "Defense": ("Aegis Shield", "Repair Kit"),
     "Arcane": ("Nova Core", "Pulse Core"),
+    "Mobility": ("Afterburner", "Phase Drive"),
+    "Ordnance": ("Rocket Pod", "Blast Capacitor"),
 }
 
 
@@ -75,8 +81,12 @@ class Game:
         self.message = "Arrows/A,D move   Space shoots   B buys   T power ability"
         self.message_until = time.monotonic() + 5
         self.last_shot = 0.0
+        self.ability_ready_at = {name: 0.0 for name in POWER_SETS}
+        self.ability_menu_open = False
+        self.ability_selection = 0
         self.ability_until = 0.0
         self.ability_ready = False
+        self.shield_charges = 1 if self.owned("Aegis Shield") else 0
         self.spawn_enemies()
 
     def dimensions(self, screen):
@@ -92,6 +102,7 @@ class Game:
         return bool(self.player_data.get("items", {}).get(name))
 
     def spawn_enemies(self):
+        self.shield_charges = 1 if self.owned("Aegis Shield") else 0
         self.enemies = []
         rows = min(2 + (self.level - 1) // 2, 4)
         cols = min(8, max(4, (self.width - 8) // 7))
@@ -114,33 +125,63 @@ class Game:
 
     def _shoot(self):
         now = time.monotonic()
-        cooldown = .12 if self.owned("Rapid Fire") else .27
+        cooldown = self.shot_cooldown()
         if now - self.last_shot < cooldown:
             return
         self.last_shot = now
         laser = self.owned("Piercing Laser")
-        bullet_type = "laser" if laser else ("nova" if self.owned("Nova Core") else "bolt")
+        bullet_type = "rocket" if self.owned("Rocket Pod") else ("laser" if laser else ("nova" if self.owned("Nova Core") else "bolt"))
         offsets = (-1, 1) if self.owned("Twin Cannons") else (0,)
         for offset in offsets:
-            self.bullets.append({"y": self.player_y - 1, "x": self.player_x + offset, "type": bullet_type, "pierce": laser})
+            self.bullets.append({"y": self.player_y - 1, "x": self.player_x + offset, "type": bullet_type, "pierce": laser and bullet_type != "rocket"})
 
-    def activate_set_ability(self):
+    def shot_cooldown(self):
+        if self.owned("Rocket Pod"):
+            return 1.5
+        return .12 if self.owned("Rapid Fire") else .27
+
+    def available_abilities(self):
         items = self.player_data.get("items", {})
-        complete_sets = [name for name, members in POWER_SETS.items() if all(items.get(member) for member in members)]
-        if complete_sets:
-            self.ability_ready = True
-            self.ability_until = time.monotonic() + 2.5
-            if complete_sets[-1] == "Defense":
-                self.lives += 1
-            else:
-                for enemy in self.alive_enemies():
-                    enemy["hp"] -= 4 if enemy["kind"] == "boss" else 999
+        return [name for name, members in POWER_SETS.items() if all(items.get(member) for member in members)]
+
+    def activate_set_ability(self, name):
+        now = time.monotonic()
+        if now < self.ability_ready_at[name]:
+            self.message = f"{name} reload: {self.ability_ready_at[name] - now:.1f}s"
+            self.message_until = now + 2
+            return
+
+        if name == "Defense":
+            self.lives += 1
+            self.invulnerable_until = now + 2
+        elif name == "Arcane":
+            first_row = min((enemy["y"] for enemy in self.alive_enemies()), default=None)
+            for enemy in self.alive_enemies():
+                if enemy["y"] == first_row:
+                    enemy["hp"] -= 1
                     if enemy["hp"] <= 0:
                         enemy["alive"] = False
                         self._reward(enemy)
-            self.message = f"{complete_sets[-1]} set ability unleashed!"
-        else:
-            self.message = "Complete a matching item pair to unlock a T ability."
+        elif name == "Laser":
+            target_row = max((enemy["y"] for enemy in self.alive_enemies()), default=None)
+            for enemy in self.alive_enemies():
+                if enemy["y"] == target_row:
+                    enemy["hp"] -= 3
+                    if enemy["hp"] <= 0:
+                        enemy["alive"] = False
+                        self._reward(enemy)
+        elif name == "Mobility":
+            self.invulnerable_until = now + 3
+        elif name in ("Ordnance", "Assault"):
+            limit, damage = (3, 2) if name == "Ordnance" else (4, 2)
+            targets = sorted(self.alive_enemies(), key=lambda enemy: enemy["y"], reverse=True)[:limit]
+            for enemy in targets:
+                enemy["hp"] -= damage
+                if enemy["hp"] <= 0:
+                    enemy["alive"] = False
+                    self._reward(enemy)
+        self.ability_ready_at[name] = now + 12
+        self.message = f"{name} ability activated! Reload: 12s."
         self.message_until = time.monotonic() + 2.5
 
     def _reward(self, enemy):
@@ -177,6 +218,18 @@ class Game:
                 self.player_data["lives"] = 3
                 self.__init__(self.player_data)
             return
+        if self.ability_menu_open:
+            abilities = self.available_abilities()
+            if key in (curses.KEY_LEFT, curses.KEY_UP, ord("a"), ord("A")):
+                self.ability_selection = (self.ability_selection - 1) % len(abilities)
+            elif key in (curses.KEY_RIGHT, curses.KEY_DOWN, ord("d"), ord("D")):
+                self.ability_selection = (self.ability_selection + 1) % len(abilities)
+            elif key in (10, 13, ord("t"), ord("T")):
+                self.activate_set_ability(abilities[self.ability_selection])
+                self.ability_menu_open = False
+            elif key == 27:
+                self.ability_menu_open = False
+            return
         if self.shop_open:
             if key in (curses.KEY_LEFT, ord("a"), ord("A"), curses.KEY_UP):
                 self.shop_selection = (self.shop_selection - 1) % len(ITEMS)
@@ -196,13 +249,21 @@ class Game:
             return
         self.frame += 1
         if key in (curses.KEY_LEFT, ord("a"), ord("A")):
-            self.player_x = max(2, self.player_x - 2)
+            self.player_x = max(2, self.player_x - (3 if self.owned("Afterburner") else 2))
         elif key in (curses.KEY_RIGHT, ord("d"), ord("D")):
-            self.player_x = min(width - 3, self.player_x + 2)
+            self.player_x = min(width - 3, self.player_x + (3 if self.owned("Afterburner") else 2))
         elif key in (ord(" "), ord("w"), ord("W"), curses.KEY_UP):
             self._shoot()
         elif key in (ord("t"), ord("T")):
-            self.activate_set_ability()
+            abilities = self.available_abilities()
+            if len(abilities) == 1:
+                self.activate_set_ability(abilities[0])
+            elif abilities:
+                self.ability_menu_open = True
+                self.ability_selection = 0
+            else:
+                self.message = "Complete a matching item pair to unlock an ability."
+                self.message_until = time.monotonic() + 2.5
 
         speed = max(10, 20 - self.level)
         if self.frame % speed == 0:
@@ -225,13 +286,22 @@ class Game:
             bullet["y"] -= 1
             hits = [e for e in self.alive_enemies() if bullet["y"] == e["y"] and e["x"] <= bullet["x"] < e["x"] + 3]
             for enemy in hits:
-                damage = 2 if bullet["type"] in ("laser", "nova") else 1
+                damage = 1 if bullet["type"] == "rocket" else (2 if bullet["type"] in ("laser", "nova") else 1)
                 enemy["hp"] -= damage
                 if enemy["hp"] <= 0:
                     enemy["alive"] = False
                     self._reward(enemy)
                 if not bullet["pierce"]:
                     break
+            if bullet["type"] == "rocket" and hits:
+                radius = 3 if self.owned("Blast Capacitor") else 2
+                direct_hits = {id(enemy) for enemy in hits}
+                for enemy in self.alive_enemies():
+                    if id(enemy) not in direct_hits and abs(enemy["x"] - bullet["x"]) <= radius and abs(enemy["y"] - bullet["y"]) <= 1:
+                        enemy["hp"] -= 1
+                        if enemy["hp"] <= 0:
+                            enemy["alive"] = False
+                            self._reward(enemy)
             if bullet["y"] > 1 and (bullet["pierce"] or not hits):
                 next_bullets.append(bullet)
             elif bullet["type"] == "nova" and hits:
@@ -247,7 +317,10 @@ class Game:
         for bullet in self.enemy_bullets:
             bullet["y"] += 1
             if bullet["y"] >= self.player_y and abs(bullet["x"] - self.player_x) <= 1 and time.monotonic() >= self.invulnerable_until:
-                self.lives = max(0, self.lives - 1)
+                if self.shield_charges:
+                    self.shield_charges -= 1
+                else:
+                    self.lives = max(0, self.lives - 1)
                 self.hit_until = time.monotonic() + .4
                 self.invulnerable_until = time.monotonic() + 1.1
                 if self.lives <= 0:
@@ -285,6 +358,18 @@ class Game:
         self.player_y = height - 2
         self.player_x = min(max(2, self.player_x), width - 3)
         safe_addstr(screen, 0, 2, f" STARFALL  |  Score {self.score}  Lives {self.lives}  Wave {self.level}  Credits {self.money} "[:cols - 4], curses.A_BOLD)
+        now = time.monotonic()
+        reload_hud = []
+        if self.owned("Rocket Pod"):
+            reload_hud.append(f"Rocket {max(0.0, self.last_shot + self.shot_cooldown() - now):.1f}s")
+        for ability in self.available_abilities():
+            remaining = max(0.0, self.ability_ready_at[ability] - now)
+            if remaining > 0:
+                reload_hud.append(f"{ability} {remaining:.0f}s")
+        if self.shield_charges:
+            reload_hud.append(f"Shield x{self.shield_charges}")
+        if reload_hud:
+            safe_addstr(screen, 1, 2, "Reloads: " + " | ".join(reload_hud), curses.A_DIM)
         if not self.shop_open:
             color = curses.color_pair(2 if time.monotonic() < self.hit_until else 1) | curses.A_BOLD
             safe_addstr(screen, self.player_y, self.player_x - 1, PLAYER, color)
@@ -296,19 +381,19 @@ class Game:
                 if enemy["kind"] == "boss" and enemy["y"] + 1 < height - 1:
                     safe_addstr(screen, enemy["y"] + 1, enemy["x"], f"HP {enemy['hp']}", curses.color_pair(2))
             for bullet in self.bullets:
-                glyph, color = {"bolt": ("|", 4), "laser": ("║", 5), "nova": ("*", 6)}[bullet["type"]]
+                glyph, color = {"bolt": ("|", 4), "laser": ("║", 5), "nova": ("*", 6), "rocket": ("R", 2)}[bullet["type"]]
                 safe_addstr(screen, bullet["y"], bullet["x"], glyph, curses.color_pair(color) | curses.A_BOLD)
             for bullet in self.enemy_bullets:
                 safe_addstr(screen, bullet["y"], bullet["x"], "v", curses.color_pair(2) | curses.A_BOLD)
         if self.shop_open:
             safe_addstr(screen, 2, 3, "ARMORY  |  ←/→ select   B buy   S save   N continue", curses.A_BOLD | curses.color_pair(4))
             names = list(ITEMS)
-            visible = names[max(0, min(self.shop_selection - 2, len(names) - 4)):max(4, min(self.shop_selection - 2, len(names) - 4)) + 4]
-            if len(visible) < 4:
-                visible = names[:4]
+            visible_count = min(4, max(1, (height - 8) // 2))
+            start = max(0, min(self.shop_selection - visible_count // 2, len(names) - visible_count))
+            visible = names[start:start + visible_count]
             for i, name in enumerate(visible):
                 item = ITEMS[name]
-                y = 5 + i * 3
+                y = 4 + i * 2
                 selected = name == names[self.shop_selection]
                 owned = self.owned(name)
                 locked = not owned and self.money < item["cost"]
@@ -317,12 +402,24 @@ class Game:
                 safe_addstr(screen, y, 4, ("> " if selected else "  ") + name, curses.color_pair(color) | (curses.A_BOLD if selected else 0))
                 safe_addstr(screen, y, min(cols - 20, 26), f"{status}  |  {item['power']}", curses.color_pair(color))
                 safe_addstr(screen, y + 1, 7, item["description"])
-            sets = [power for power, members in POWER_SETS.items() if all(self.owned(name) for name in members)]
-            safe_addstr(screen, min(height - 3, 18), 4, f"T ability: {', '.join(sets) if sets else 'collect both items of any power'}")
+            sets = self.available_abilities()
+            hint = f"T abilities ready: {', '.join(sets)}" if sets else "Abilities unlock when you collect a matching item pair."
+            safe_addstr(screen, height - 3, 3, hint, curses.A_DIM)
+            safe_addstr(screen, height - 2, 3, "Arrows select | B buy | S save | N continue", curses.A_BOLD)
         elif time.monotonic() < self.message_until:
             safe_addstr(screen, height - 1, 2, self.message[:cols - 4], curses.A_BOLD)
         else:
             safe_addstr(screen, height - 1, 2, "Move: ←/→ or A/D    Fire: Space    Set ability: T", curses.A_DIM)
+        if self.ability_menu_open:
+            abilities = self.available_abilities()
+            top = max(2, height // 2 - len(abilities) // 2 - 1)
+            safe_addstr(screen, top, 4, "CHOOSE AN ABILITY | arrows select, Enter activate, Esc cancel", curses.A_BOLD | curses.color_pair(4))
+            for index, ability in enumerate(abilities):
+                remaining = max(0.0, self.ability_ready_at[ability] - now)
+                state = "READY" if remaining <= 0 else f"RELOAD {remaining:.1f}s"
+                prefix = "> " if index == self.ability_selection else "  "
+                attr = curses.A_BOLD if index == self.ability_selection else 0
+                safe_addstr(screen, top + 1 + index, 6, f"{prefix}{ability} [{state}]", attr)
         if self.game_over:
             safe_addstr(screen, height // 2, max(1, (cols - 12) // 2), "GAME OVER", curses.color_pair(2) | curses.A_BOLD)
             safe_addstr(screen, height // 2 + 1, max(1, (cols - 27) // 2), "Press R to restart, Q to exit")
