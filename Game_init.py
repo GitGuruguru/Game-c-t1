@@ -12,13 +12,13 @@ PLAYER_BULLET = "*"
 ENEMY_BULLET = "`"
 LASER = "|"
 ROCKET = "@"
-
+def_unit = "^"
 SHOT_COOLDOWNS = {
     "bullet": 0.18,
     "lasers": 0.30,
     "rockets": 3.00,
 }
-
+termal_level = 1
 ROCKET_RADIUS = 5
 ROCKET_DAMAGE_SCORE = 20
 EXPLOSION_DURATION = 5 # Frames
@@ -179,7 +179,7 @@ class Game:
                             self.player_x,
                         ])
                         self.last_shot_time = now
-
+                
                 elif self.bullet_state == "rockets":
                     if len(self.rockets) < 10:
                         self.rockets.append([
@@ -223,12 +223,12 @@ class Game:
                 enemy[1] + 1,
                 enemy[0] + 1,
             ])
-
-        # Space defenses: destroy incoming bullets close to the player.
+  
         if "spacedefances" in self.player.get("items", []):
             self.enemy_bullets = [
                 bullet for bullet in self.enemy_bullets
                 if not (
+
                     bullet[0] >= self.player_y - 3
                     and abs(bullet[1] - self.player_x) <= 1
                 )
