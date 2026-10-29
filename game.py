@@ -1,9 +1,25 @@
 """Launch Starfall, a responsive terminal arcade shooter."""
 import curses
+import os
+import sys
 import time
+from pathlib import Path
 
 from Game_init import Game
 from data.Saves import load_player, save_player
+
+
+def player_save_path():
+    if getattr(sys, "frozen", False):
+        save_dir = Path(os.environ.get("APPDATA", Path.home())) / "Starfall"
+        save_dir.mkdir(parents=True, exist_ok=True)
+        save_path = save_dir / "player.json"
+        if not save_path.exists():
+            bundled = Path(sys._MEIPASS) / "data" / "player.json"
+            if bundled.exists():
+                save_path.write_bytes(bundled.read_bytes())
+        return str(save_path)
+    return "./data/player.json"
 
 
 def setup_colors():
@@ -31,7 +47,8 @@ def main(stdscr):
     stdscr.keypad(True)
     stdscr.nodelay(True)
     setup_colors()
-    player = load_player("./data/player.json")
+    save_path = player_save_path()
+    player = load_player(save_path)
     game = Game(player)
     last_key_time = 0.0
     while True:
@@ -52,7 +69,7 @@ def main(stdscr):
         except curses.error:
             continue
     game.sync_player_data()
-    save_player(game.player_data, "./data/player.json")
+    save_player(game.player_data, save_path)
 
 
 if __name__ == "__main__":

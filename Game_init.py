@@ -2,6 +2,8 @@
 import curses
 import random
 import time
+import sys
+from pathlib import Path
 
 from data.Saves import load_player
 
@@ -177,7 +179,13 @@ class Game:
             elif key in (ord("s"), ord("S")):
                 from data.Saves import save_player
                 self.sync_player_data()
-                save_player(self.player_data, "./data/player.json")
+                if getattr(sys, "frozen", False):
+                    save_dir = Path.home() / "AppData" / "Roaming" / "Starfall"
+                    save_dir.mkdir(parents=True, exist_ok=True)
+                    save_path = save_dir / "player.json"
+                else:
+                    save_path = Path("./data/player.json")
+                save_player(self.player_data, str(save_path))
                 self.message = "Progress saved."
                 self.message_until = time.monotonic() + 2
             elif key in (ord("n"), ord("N"), ord("q"), ord("Q"), 10, 13):
