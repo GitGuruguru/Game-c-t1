@@ -10,7 +10,7 @@ except ImportError:  # Keep the simulation/rendering usable on stock Windows Pyt
 from data.Saves import load_player, player_save_path
 
 
-PLAYER = "<A>"
+PLAYER = "/A\\"
 ENEMY = "<W>"
 ENEMY_TYPES = {
     "scout": {"sprite": "<w>", "color": 3, "hp": 1, "points": 10},
@@ -27,6 +27,7 @@ ITEMS = {
     "Repair Kit": {"cost": 90, "power": "Defense", "description": "Restore one life"},
     "Nova Core": {"cost": 300, "power": "Arcane", "description": "Explosive shots"},
     "Pulse Core": {"cost": 240, "power": "Arcane", "description": "Shock nearby enemies"},
+    "Extra Life": {"cost": 120, "power": "Survival", "description": "Add one life", "repeatable": True},
 }
 POWER_SETS = {
     "Assault": ("Rapid Fire", "Twin Cannons"),
@@ -61,7 +62,7 @@ class Game:
         self.enemy_bullets = []
         self.enemies = []  # dicts with position, type, hp, and alive
         self.score = int(self.player_data.get("score", 0))
-        self.lives = int(self.player_data.get("lives", 3))
+        self.lives = max(1, int(self.player_data.get("lives", 3)))
         self.level = max(1, int(self.player_data.get("level", 1)))
         self.money = int(self.player_data.get("money", 0))
         self.enemy_dir = 1
@@ -151,13 +152,16 @@ class Game:
         choices = list(ITEMS)
         name = choices[self.shop_selection % len(choices)]
         item = ITEMS[name]
-        if self.owned(name):
+        if self.owned(name) and not item.get("repeatable"):
             self.message = f"{name} already owned."
         elif self.money < item["cost"]:
             self.message = f"Need {item['cost'] - self.money} more credits for {name}."
         else:
             self.money -= item["cost"]
-            self.player_data.setdefault("items", {})[name] = True
+            if item.get("repeatable"):
+                self.lives += 1
+            else:
+                self.player_data.setdefault("items", {})[name] = True
             if name == "Repair Kit":
                 self.lives += 1
             self.message = f"Bought {name}! {item['description']}."
@@ -170,6 +174,7 @@ class Game:
         self.player_x = min(max(2, self.player_x), width - 3)
         if self.game_over:
             if key in (ord("r"), ord("R")):
+                self.player_data["lives"] = 3
                 self.__init__(self.player_data)
             return
         if self.shop_open:
@@ -199,7 +204,7 @@ class Game:
         elif key in (ord("t"), ord("T")):
             self.activate_set_ability()
 
-        speed = max(2, 8 - self.level)
+        speed = max(10, 20 - self.level)
         if self.frame % speed == 0:
             alive = self.alive_enemies()
             hit_edge = any(e["x"] + self.enemy_dir < 1 or e["x"] + 4 + self.enemy_dir >= width - 1 for e in alive)
@@ -209,7 +214,7 @@ class Game:
                     enemy["y"] += 1
             else:
                 for enemy in alive:
-                    enemy["x"] += self.enemy_dir * (2 if enemy["kind"] == "boss" else 1)
+                    enemy["x"] += self.enemy_dir
         alive = self.alive_enemies()
         if alive and self.frame % max(3, 14 - self.level) == 0:
             shooter = random.choice(alive)
@@ -242,7 +247,7 @@ class Game:
         for bullet in self.enemy_bullets:
             bullet["y"] += 1
             if bullet["y"] >= self.player_y and abs(bullet["x"] - self.player_x) <= 1 and time.monotonic() >= self.invulnerable_until:
-                self.lives -= 1
+                self.lives = max(0, self.lives - 1)
                 self.hit_until = time.monotonic() + .4
                 self.invulnerable_until = time.monotonic() + 1.1
                 if self.lives <= 0:
